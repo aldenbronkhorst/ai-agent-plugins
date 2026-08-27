@@ -1,0 +1,68 @@
+instructions:
+  prerequisites:
+    - "Python 3.9 or newer."
+    - "Proton Pass CLI installed and available as pass-cli or through PROTON_PASS_CLI_PATH."
+    - "Supported by Proton Pass CLI: macOS, Linux, and Windows."
+
+  cli:
+    unix_entrypoint: "python3 scripts/pass_cli_agent.py <pass-cli arguments>"
+    windows_entrypoint: "py -3 scripts/pass_cli_agent.py <pass-cli arguments>"
+    installation_check: "pass-cli --version"
+    documentation: "https://protonpass.github.io/pass-cli/"
+    rules:
+      - "Use the managed entrypoint for every pass-cli command."
+      - "Read the complete command output and exit code before retrying a failure."
+
+  session:
+    health_check: "pass-cli info"
+    before_every_command:
+      - "Run the health check."
+      - "Continue when it succeeds with exit code 0."
+      - "Re-authenticate only for an authentication error or missing session."
+    reauthentication:
+      - "Run pass-cli logout --force to clear a stale session."
+      - "When PROTON_PASS_PERSONAL_ACCESS_TOKEN is available, provide it only to pass-cli login and remove it before the requested command runs."
+      - "When no token is available, ask the user to complete pass-cli login using Proton's normal web flow."
+      - "Run pass-cli info and require exit code 0 before continuing."
+      - "Retry the original command once."
+    token_safety:
+      - "Use a minimally scoped, expiring Personal Access Token for automation."
+      - "Never place a token in this repository, a command argument, logs, chat output, or a plaintext file."
+      - "Do not invent a persistent token-storage mechanism; use the agent host's secret injection when unattended recovery is required."
+
+  discovery:
+    commands:
+      - "pass-cli vault list --output json"
+      - "pass-cli share list --output json"
+      - "pass-cli item list --output json"
+      - "pass-cli item list --vault-name <VAULT_NAME> --output json"
+    rules:
+      - "Use --output json for programmatic parsing."
+      - "Confirm that the required vault or item is visible; otherwise report the complete non-secret error."
+
+  item_access:
+    required_environment:
+      name: "PROTON_PASS_AGENT_REASON"
+      value: "A brief, specific description of why the item or field is needed."
+    commands:
+      - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE>"
+      - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE> --field <FIELD_NAME>"
+      - "pass-cli item view pass://<SHARE_ID>/<ITEM_ID>"
+    reason_required_for:
+      - "item view"
+      - "item create"
+      - "item update"
+      - "item trash"
+      - "item untrash"
+      - "vault update"
+    rules:
+      - "Retrieve only the item or field required for the task."
+      - "Never print, paste, return, or persist secret field values."
+
+  recovery:
+    authentication_failure:
+      - "Let the managed wrapper perform one logout, login, verification, and retry cycle."
+      - "If recovery still fails, report the complete non-secret error and stop."
+    other_failure:
+      - "Do not re-authenticate for permission, network, or invalid-command errors."
+      - "Report the complete non-secret error and stop when a safe correction is not available."
