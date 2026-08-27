@@ -1,16 +1,16 @@
 {
   "name": "proton-pass",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260827210639",
   "description": "Secure Proton Pass CLI access and session recovery for AI agents.",
   "author": {
-    "name": "Alden Bronkhorst"
+    "name": "AI Agent Plugins"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Proton Pass",
     "shortDescription": "Use Proton Pass securely from AI agents.",
     "longDescription": "Portable Proton Pass CLI guidance and a dependency-free wrapper for safe credential access and session recovery on macOS, Linux, and Windows.",
-    "developerName": "Alden Bronkhorst",
+    "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
       "Safe Proton Pass CLI access",

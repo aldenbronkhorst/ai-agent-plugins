@@ -1,7 +1,7 @@
 {
-  "name": "alden-agents",
+  "name": "ai-agent-plugins",
   "interface": {
-    "displayName": "Alden Agents"
+    "displayName": "AI Agent Plugins"
   },
   "plugins": [
     {

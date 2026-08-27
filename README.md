@@ -25,13 +25,13 @@ codex plugin marketplace add aldenbronkhorst/ai-agent-plugins
 Install the Proton Pass agent workflow:
 
 ```bash
-codex plugin add proton-pass@alden-agents
+codex plugin add proton-pass@ai-agent-plugins
 ```
 
 Install the Odoo project adapter when needed:
 
 ```bash
-codex plugin add odoo-project@alden-agents
+codex plugin add odoo-project@ai-agent-plugins
 ```
 
 Start a new Codex task after installing so the plugin skill is loaded.
@@ -53,9 +53,9 @@ cached installation. Then commit and push the change.
 ## Update a device
 
 ```bash
-codex plugin marketplace upgrade alden-agents
-codex plugin add proton-pass@alden-agents
-codex plugin add odoo-project@alden-agents
+codex plugin marketplace upgrade ai-agent-plugins
+codex plugin add proton-pass@ai-agent-plugins
+codex plugin add odoo-project@ai-agent-plugins
 ```
 
 Start a new task after updating.
