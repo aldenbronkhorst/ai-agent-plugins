@@ -1,7 +1,7 @@
 {
-  "name": "alden-codex",
+  "name": "alden-agents",
   "interface": {
-    "displayName": "Alden Codex"
+    "displayName": "Alden Agents"
   },
   "plugins": [
     {
