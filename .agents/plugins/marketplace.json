@@ -1,0 +1,20 @@
+{
+  "name": "alden-codex",
+  "interface": {
+    "displayName": "Alden Codex"
+  },
+  "plugins": [
+    {
+      "name": "odoo-project",
+      "source": {
+        "source": "local",
+        "path": "./plugins/odoo-project"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

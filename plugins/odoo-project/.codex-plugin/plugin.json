@@ -1,0 +1,21 @@
+{
+  "name": "odoo-project",
+  "version": "0.1.0",
+  "description": "Project guidance for the Lots Lots More Odoo 19 repository.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Odoo Project",
+    "shortDescription": "Work safely on the Lots Lots More Odoo project.",
+    "longDescription": "Project guidance for developing and deploying the Lots Lots More Odoo 19 repository, including staging and production safeguards.",
+    "developerName": "Alden Bronkhorst",
+    "category": "Productivity",
+    "capabilities": [
+      "Odoo 19 project guidance",
+      "Staging and production safeguards"
+    ],
+    "defaultPrompt": "Help me work on the Lots Lots More Odoo project."
+  }
+}
