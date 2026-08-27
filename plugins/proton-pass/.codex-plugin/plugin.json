@@ -1,6 +1,6 @@
 {
   "name": "proton-pass",
-  "version": "0.1.0+codex.20260827210639",
+  "version": "0.1.0+codex.20260827211833",
   "description": "Secure Proton Pass CLI access and session recovery for AI agents.",
   "author": {
     "name": "AI Agent Plugins"

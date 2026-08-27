@@ -1,16 +1,14 @@
 # AI Agent Plugins
 
-Private collection of reusable instructions and adapters for AI coding agents.
-Shared project guidance lives under `shared/`; platform-specific packaging can
-be added alongside it. Codex is the first supported adapter, not the identity
-of the repository.
+Private collection of reusable plugins for AI coding agents. Codex is the first
+supported marketplace, not the identity of the repository.
 
 ## Layout
 
 - `plugins/proton-pass/` provides portable Proton Pass CLI access and session
   recovery for agents. It is the first marketplace entry.
-- `shared/odoo-project/AGENTS.md` contains portable project guidance.
-- `plugins/odoo-project/` packages that guidance as a Codex plugin.
+- `plugins/odoo-19/` provides minimal, project-neutral Odoo 19 development and
+  deployment guidance.
 - Future adapters for other AI agents can be added without renaming the
   repository.
 
@@ -28,10 +26,10 @@ Install the Proton Pass agent workflow:
 codex plugin add proton-pass@ai-agent-plugins
 ```
 
-Install the Odoo project adapter when needed:
+Install the Odoo 19 workflow when needed:
 
 ```bash
-codex plugin add odoo-project@ai-agent-plugins
+codex plugin add odoo-19@ai-agent-plugins
 ```
 
 Start a new Codex task after installing so the plugin skill is loaded.
@@ -39,10 +37,12 @@ Start a new Codex task after installing so the plugin skill is loaded.
 ## Proton Pass on a new device
 
 Install `pass-cli` using the [official installation instructions](https://protonpass.github.io/pass-cli/get-started/installation/)
-for macOS, Linux, or Windows, then complete `pass-cli login` once. For
-unattended recovery, provide a minimally scoped Personal Access Token through
-`PROTON_PASS_PERSONAL_ACCESS_TOKEN` only for the wrapper process. The plugin
-does not store the token.
+for macOS, Linux, or Windows. The wrapper maintains an isolated agent session,
+checks it before every command, and performs one verified recovery when
+authentication expires. For unattended recovery, inject a minimally scoped
+Personal Access Token through `PROTON_PASS_PERSONAL_ACCESS_TOKEN`. On macOS,
+the wrapper can instead read its generic Keychain entry and can migrate the
+former local Codex entry. The plugin never stores the token in its files.
 
 ## Publish a plugin update
 
@@ -55,7 +55,7 @@ cached installation. Then commit and push the change.
 ```bash
 codex plugin marketplace upgrade ai-agent-plugins
 codex plugin add proton-pass@ai-agent-plugins
-codex plugin add odoo-project@ai-agent-plugins
+codex plugin add odoo-19@ai-agent-plugins
 ```
 
 Start a new task after updating.

@@ -1,0 +1,21 @@
+{
+  "name": "odoo-19",
+  "version": "0.1.0",
+  "description": "Simple development and deployment guidance for Odoo 19.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Odoo 19",
+    "shortDescription": "Work safely and simply with Odoo 19.",
+    "longDescription": "Minimal guidance for developing, testing, and deploying Odoo 19 changes without project-specific credentials or configuration.",
+    "developerName": "AI Agent Plugins",
+    "category": "Productivity",
+    "capabilities": [
+      "Odoo 19 development",
+      "Staging and deployment safeguards"
+    ],
+    "defaultPrompt": "Help me work on an Odoo 19 project."
+  }
+}

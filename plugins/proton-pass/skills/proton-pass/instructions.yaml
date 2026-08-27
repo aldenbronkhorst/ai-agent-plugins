@@ -15,20 +15,29 @@ instructions:
 
   session:
     health_check: "pass-cli info"
+    connection_check: "pass-cli test"
+    session_directory:
+      - "Honor PROTON_PASS_SESSION_DIR when the host provides it."
+      - "Otherwise use a dedicated per-user agent session directory appropriate for macOS, Linux, or Windows."
+      - "On macOS, reuse the former Codex agent session directory when it already exists so existing installations migrate without interruption."
+    concurrency:
+      - "Use the wrapper's cross-platform authentication lock so concurrent agents do not race during login."
     before_every_command:
       - "Run the health check."
       - "Continue when it succeeds with exit code 0."
       - "Re-authenticate only for an authentication error or missing session."
     reauthentication:
       - "Run pass-cli logout --force to clear a stale session."
-      - "When PROTON_PASS_PERSONAL_ACCESS_TOKEN is available, provide it only to pass-cli login and remove it before the requested command runs."
+      - "Prefer PROTON_PASS_PERSONAL_ACCESS_TOKEN when the host injects it."
+      - "On macOS, otherwise check Keychain service proton-pass-agent-bootstrap and account default; existing installations may fall back to the former Codex bootstrap entry."
+      - "Provide the token only to pass-cli login and remove it before the requested command runs."
       - "When no token is available, ask the user to complete pass-cli login using Proton's normal web flow."
       - "Run pass-cli info and require exit code 0 before continuing."
       - "Retry the original command once."
     token_safety:
       - "Use a minimally scoped, expiring Personal Access Token for automation."
       - "Never place a token in this repository, a command argument, logs, chat output, or a plaintext file."
-      - "Do not invent a persistent token-storage mechanism; use the agent host's secret injection when unattended recovery is required."
+      - "Use the agent host's secret injection on any platform, or macOS Keychain where available, for unattended recovery."
 
   discovery:
     commands:

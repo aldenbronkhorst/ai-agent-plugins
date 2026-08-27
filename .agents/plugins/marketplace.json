@@ -17,10 +17,10 @@
       "category": "Productivity"
     },
     {
-      "name": "odoo-project",
+      "name": "odoo-19",
       "source": {
         "source": "local",
-        "path": "./plugins/odoo-project"
+        "path": "./plugins/odoo-19"
       },
       "policy": {
         "installation": "AVAILABLE",
