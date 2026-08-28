@@ -1,6 +1,6 @@
 {
   "name": "odoo-19",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260828111114",
   "description": "Simple development and deployment guidance for Odoo 19.",
   "author": {
     "name": "AI Agent Plugins"
