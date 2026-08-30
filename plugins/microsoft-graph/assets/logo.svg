@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Microsoft Graph">
+  <!-- App-style rendering of the Microsoft Graph product mark. -->
+  <rect width="256" height="256" rx="56" fill="#FFFFFF"/>
+  <g transform="translate(0 17)" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round">
+    <path d="M69 7 88 48 11 111Z" fill="#0879D1"/>
+    <path d="M69 7H186L88 48Z" fill="#46A3E6"/>
+    <path d="M186 7 195 112 88 48Z" fill="#317DCE"/>
+    <path d="M186 7 244 111 195 112Z" fill="#45A4E7"/>
+    <path d="M244 111 188 214 195 112Z" fill="#087ACF"/>
+    <path d="M188 214 91 174 195 112Z" fill="#194696"/>
+    <path d="M67 215 11 111 91 174Z" fill="#17386E"/>
+    <path d="M11 111 88 48 195 112 91 174Z" fill="#075AA7"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 # AI Agent Plugins
 
-Private collection of reusable plugins for AI coding agents. Codex is the first
+Reusable collection of plugins for AI coding agents. Codex is the first
 supported marketplace, not the identity of the repository.
 
 ## Layout
@@ -12,8 +12,15 @@ supported marketplace, not the identity of the repository.
 - `plugins/agent-core/` provides foundational guidance for secure credentials,
   direct tool use, appropriate dependency setup, target confirmation, and
   result verification.
+- `plugins/microsoft-graph/` provides multi-account Microsoft Graph guidance
+  and an optional unrestricted request helper for Outlook and Microsoft 365.
 - Future adapters for other AI agents can be added without renaming the
   repository.
+
+Microsoft-service plugins treat multiple accounts and tenants as a baseline:
+the agent selects and verifies the intended identity instead of relying on the
+most recently authenticated session. Authentication remains local to each
+device.
 
 ## Install in Codex
 
@@ -41,7 +48,21 @@ Install the general operating guidance:
 codex plugin add agent-core@ai-agent-plugins
 ```
 
+Install the multi-account Microsoft Graph workflow:
+
+```bash
+codex plugin add microsoft-graph@ai-agent-plugins
+```
+
 Start a new Codex task after installing so the plugin skill is loaded.
+
+## Microsoft Graph on a new device
+
+Install PowerShell 7 and the official `Microsoft.Graph.Authentication` module
+version 2.39.0 or later. Each Microsoft account signs in on that device with
+`Connect-MgGraph -LoginHint <ACCOUNT>`; the official module keeps separate
+per-account authentication records and securely caches tokens for the current
+OS user. The plugin stores no account credentials or tokens.
 
 ## Proton Pass on a new device
 
@@ -66,6 +87,7 @@ codex plugin marketplace upgrade ai-agent-plugins
 codex plugin add proton-pass@ai-agent-plugins
 codex plugin add odoo-19@ai-agent-plugins
 codex plugin add agent-core@ai-agent-plugins
+codex plugin add microsoft-graph@ai-agent-plugins
 ```
 
 Start a new task after updating.

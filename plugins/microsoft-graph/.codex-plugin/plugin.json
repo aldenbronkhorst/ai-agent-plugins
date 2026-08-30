@@ -1,0 +1,27 @@
+{
+  "name": "microsoft-graph",
+  "version": "0.1.0",
+  "description": "Multi-account Microsoft Graph access for Outlook and Microsoft 365.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Microsoft Graph",
+    "shortDescription": "Use Outlook and Microsoft 365 across accounts.",
+    "longDescription": "Cross-platform guidance and an optional unrestricted request helper for securely using Microsoft Graph across multiple personal, work, school, and tenant accounts.",
+    "developerName": "AI Agent Plugins",
+    "category": "Productivity",
+    "capabilities": [
+      "Multi-account Microsoft Graph authentication",
+      "Outlook mail, calendar, and contacts",
+      "Microsoft 365 files and collaboration",
+      "Generic Microsoft Graph REST requests"
+    ],
+    "defaultPrompt": "Use Microsoft Graph with the intended account for this task.",
+    "websiteURL": "https://learn.microsoft.com/graph/",
+    "brandColor": "#0078D4",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

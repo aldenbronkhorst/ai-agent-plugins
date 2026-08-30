@@ -1,0 +1,5 @@
+interface:
+  display_name: "Microsoft Graph"
+  short_description: "Use Microsoft Graph across multiple accounts"
+  default_prompt: "Use $microsoft-graph with the intended Microsoft account for this task."
+  brand_color: "#0078D4"
