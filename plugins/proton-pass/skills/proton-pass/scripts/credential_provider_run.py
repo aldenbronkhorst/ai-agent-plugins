@@ -47,6 +47,19 @@ def normalized(value: str) -> str:
     return "".join(character.lower() for character in value if character.isalnum())
 
 
+def words(value: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", value.lower())
+
+
+def target_terms(target: Optional[str], service: dict[str, Any]) -> list[str]:
+    if not target:
+        return []
+    service_words: set[str] = set(words(str(service.get("name", ""))))
+    for alias in service.get("aliases", []):
+        service_words.update(words(str(alias)))
+    return [word for word in words(target) if word not in service_words]
+
+
 def load_contract(path: Path) -> dict[str, Any]:
     try:
         contract = json.loads(path.read_text("utf-8"))
@@ -197,7 +210,12 @@ def vault_rank(vault: dict[str, Any], aliases: list[str]) -> tuple[int, str]:
     return (-score, name_key)
 
 
-def candidate_score(candidate: dict[str, Any], aliases: list[str], target: Optional[str]) -> int:
+def candidate_score(
+    candidate: dict[str, Any],
+    aliases: list[str],
+    target: Optional[str],
+    service: dict[str, Any],
+) -> int:
     title_key = normalized(candidate["title"])
     score = 20 if "api" in title_key else 0
     for alias in aliases:
@@ -208,10 +226,10 @@ def candidate_score(candidate: dict[str, Any], aliases: list[str], target: Optio
             score += 75
         elif alias_key in title_key:
             score += 50
-    if target:
-        target_key = normalized(target)
+    terms = target_terms(target, service)
+    if terms:
         combined = normalized(f"{candidate['vault_name']} {candidate['title']}")
-        if target_key not in combined:
+        if any(normalized(term) not in combined for term in terms):
             return -1
         score += 1000
     return score
@@ -282,6 +300,9 @@ def discover_candidate(
         f"Supply stored {service['name']} credentials to the requested service client."
     )
     for candidate in title_candidates:
+        score = candidate_score(candidate, aliases, target, service)
+        if score < 0:
+            continue
         details = json_command(
             pass_cli,
             [
@@ -302,9 +323,8 @@ def discover_candidate(
         mapped = map_contract_fields(contract, extract_item_field_names(details))
         if mapped is not None:
             candidate["fields"] = mapped
-            candidate["score"] = candidate_score(candidate, aliases, target)
-            if candidate["score"] >= 0:
-                complete.append(candidate)
+            candidate["score"] = score
+            complete.append(candidate)
 
     if not complete:
         target_text = f" for target '{target}'" if target else ""

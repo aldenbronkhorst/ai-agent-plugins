@@ -64,6 +64,49 @@ raise SystemExit(1)
 '''
 
 
+FAKE_CONCURRENT_CLI = r'''#!/usr/bin/env python3
+import os
+import sys
+import time
+from pathlib import Path
+
+state = Path(os.environ["FAKE_STATE"])
+busy = Path(os.environ["FAKE_BUSY"])
+log = Path(os.environ["FAKE_LOG"])
+args = sys.argv[1:]
+with log.open("a", encoding="utf-8") as handle:
+    handle.write(" ".join(args) + "\n")
+
+if args == ["info"]:
+    try:
+        busy.mkdir()
+    except FileExistsError:
+        print("Cannot create a file when that file already exists", file=sys.stderr)
+        raise SystemExit(7)
+    try:
+        time.sleep(0.1)
+        if state.exists():
+            print("authenticated")
+            raise SystemExit(0)
+        print("This operation requires an authenticated client", file=sys.stderr)
+        raise SystemExit(1)
+    finally:
+        busy.rmdir()
+if args == ["logout", "--force"]:
+    state.unlink(missing_ok=True)
+    raise SystemExit(0)
+if args == ["login"]:
+    if os.environ.get("PROTON_PASS_PERSONAL_ACCESS_TOKEN") != "pst_valid::valid":
+        raise SystemExit(1)
+    state.write_text("authenticated", encoding="utf-8")
+    raise SystemExit(0)
+if state.exists():
+    print("requested-command-ok")
+    raise SystemExit(0)
+raise SystemExit(1)
+'''
+
+
 class PassCliAgentTests(unittest.TestCase):
     def run_wrapper(self, token: str | None, *arguments: str) -> tuple[subprocess.CompletedProcess[str], list[str]]:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -112,7 +155,6 @@ class PassCliAgentTests(unittest.TestCase):
             calls,
             [
                 "info",
-                "info",
                 "logout --force",
                 "login",
                 "info",
@@ -120,6 +162,52 @@ class PassCliAgentTests(unittest.TestCase):
             ],
         )
         self.assertNotIn("pst_valid", result.stdout + result.stderr + "\n".join(calls))
+
+    def test_concurrent_fresh_agents_serialize_initial_session_creation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary = Path(temporary_directory)
+            fake_cli = temporary / "pass-cli"
+            state = temporary / "state"
+            busy = temporary / "info-busy"
+            log = temporary / "calls.log"
+            fake_cli.write_text(FAKE_CONCURRENT_CLI, encoding="utf-8")
+            fake_cli.chmod(0o700)
+            env = os.environ.copy()
+            env.update(
+                {
+                    "PROTON_PASS_CLI_PATH": str(fake_cli),
+                    "PROTON_PASS_SESSION_DIR": str(temporary / "session"),
+                    "PROTON_PASS_PERSONAL_ACCESS_TOKEN": "pst_valid::valid",
+                    "FAKE_STATE": str(state),
+                    "FAKE_BUSY": str(busy),
+                    "FAKE_LOG": str(log),
+                }
+            )
+            processes = [
+                subprocess.Popen(
+                    [
+                        sys.executable,
+                        str(SCRIPTS / "pass_cli_agent.py"),
+                        "vault",
+                        "list",
+                        "--output",
+                        "json",
+                    ],
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                for _ in range(3)
+            ]
+            results = [process.communicate(timeout=10) for process in processes]
+
+            for process, (stdout, stderr) in zip(processes, results):
+                self.assertEqual(process.returncode, 0, stderr)
+                self.assertIn("requested-command-ok", stdout)
+                self.assertNotIn("already exists", stderr.lower())
+            calls = log.read_text("utf-8").splitlines()
+            self.assertEqual(calls.count("login"), 1)
 
     def test_rejected_bootstrap_token_fails_without_exposing_it(self) -> None:
         result, calls = self.run_wrapper(

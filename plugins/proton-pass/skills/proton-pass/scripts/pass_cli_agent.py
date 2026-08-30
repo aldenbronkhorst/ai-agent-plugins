@@ -402,12 +402,9 @@ def ensure_session(
     session_root: Path,
     injected_token: Optional[str],
 ) -> bool:
-    status = run_capture([pass_cli, "info"], env)
-    if status.returncode == 0:
-        return True
-    if not is_auth_failure(status):
-        emit(status)
-        return False
+    # The first status call can initialize Proton's session directory. Keep it
+    # under the same cross-process lock as login so concurrent fresh agents do
+    # not race while creating that directory.
     return recover_session(pass_cli, env, session_root, injected_token)
 
 

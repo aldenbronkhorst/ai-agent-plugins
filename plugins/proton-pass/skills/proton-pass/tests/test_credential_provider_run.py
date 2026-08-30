@@ -70,6 +70,40 @@ class CredentialProviderTests(unittest.TestCase):
         reference = MODULE.pass_reference("share", "item", "Section.API Key")
         self.assertEqual(reference, "pass://share/item/Section.API%20Key")
 
+    def test_service_name_is_removed_from_target_hint(self) -> None:
+        service = {"name": "Odoo", "aliases": ["odoo"]}
+        production = {
+            "vault_name": "AI Agents",
+            "title": "Odoo API - Production",
+        }
+        staging = {
+            "vault_name": "AI Agents",
+            "title": "Odoo API - Staging",
+        }
+
+        self.assertEqual(MODULE.target_terms("Odoo Production", service), ["production"])
+        self.assertGreater(
+            MODULE.candidate_score(production, ["odoo"], "Odoo Production", service),
+            0,
+        )
+        self.assertEqual(
+            MODULE.candidate_score(staging, ["odoo"], "Odoo Production", service),
+            -1,
+        )
+
+    def test_service_only_target_does_not_restrict_candidates(self) -> None:
+        service = {"name": "Example Service", "aliases": ["example"]}
+        candidate = {
+            "vault_name": "Automation",
+            "title": "Example API",
+        }
+
+        self.assertEqual(MODULE.target_terms("Example Service", service), [])
+        self.assertGreater(
+            MODULE.candidate_score(candidate, ["example"], "Example Service", service),
+            0,
+        )
+
     def test_authentication_failure_marks_consumer_as_not_started(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary = Path(temporary_directory)
