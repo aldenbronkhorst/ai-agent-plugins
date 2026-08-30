@@ -1,6 +1,6 @@
 {
   "name": "proton-pass",
-  "version": "0.1.0+codex.20260830133933",
+  "version": "0.1.0+codex.20260830135827",
   "description": "Proton Pass credential provider and secure session recovery for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
@@ -18,6 +18,10 @@
       "Automatic PAT session recovery",
       "Secret-output safeguards"
     ],
-    "defaultPrompt": "Use Proton Pass to retrieve the required credential without displaying or persisting it."
+    "defaultPrompt": "Use Proton Pass to retrieve the required credential without displaying or persisting it.",
+    "websiteURL": "https://proton.me/pass",
+    "brandColor": "#6D4AFF",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
   }
 }

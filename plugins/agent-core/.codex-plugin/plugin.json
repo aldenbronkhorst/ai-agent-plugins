@@ -1,6 +1,6 @@
 {
   "name": "agent-core",
-  "version": "0.1.0+codex.20260830133933",
+  "version": "0.1.0+codex.20260830135827",
   "description": "Foundational operating guidance for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
@@ -16,6 +16,9 @@
       "Secure credential handling",
       "Direct tool preference"
     ],
-    "defaultPrompt": "Apply the core operating guidance to this task."
+    "defaultPrompt": "Apply the core operating guidance to this task.",
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
   }
 }
