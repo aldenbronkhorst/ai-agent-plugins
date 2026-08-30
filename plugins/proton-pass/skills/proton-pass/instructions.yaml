@@ -6,6 +6,9 @@ instructions:
 
   python_runtime:
     executable: "Use a verified Python 3.9+ executable for all bundled scripts."
+    general:
+      - "Prefer a compatible runtime already supplied by the host, workspace, or project."
+      - "If none is available, install a trusted compatible runtime through the platform's normal package manager or an isolated environment, verify it, and continue rather than switching to an inferior workflow."
     windows:
       - "Do not assume py -3 exists. Prefer a compatible Python runtime already supplied by the host or workspace, then verify py -3, python3, or python."
       - "Do not treat a Microsoft Store execution alias as a usable Python runtime."
@@ -24,32 +27,42 @@ instructions:
 
   session:
     health_check: "pass-cli info"
+    lifetimes:
+      - "A Proton agent token may be issued for up to one year; each CLI session created from it lasts two hours. Do not confuse the two lifetimes."
+      - "An expired CLI session normally reauthenticates automatically with the same current agent token."
     session_directory:
       - "Honor PROTON_PASS_SESSION_DIR when the host provides it."
-      - "Otherwise use a dedicated per-user agent session directory appropriate for macOS, Linux, or Windows."
-      - "On macOS, reuse the former Codex agent session directory when it already exists so existing installations migrate without interruption."
+      - "Otherwise use the wrapper's dedicated per-user temporary agent session directory on macOS, Linux, or Windows."
+      - "On macOS, use a dedicated temporary agent session as Proton's generated agent instructions recommend. Do not reuse the user's normal CLI session or a legacy agent session."
+      - "On Windows, use the per-user temporary directory so clean agent tasks do not need host access to LocalAppData merely to open the agent session."
+      - "On Linux, include the numeric user ID in the temporary session name so users do not collide in a shared temporary directory."
     concurrency:
       - "Use the wrapper's cross-platform authentication lock so concurrent agents do not race during login."
-    access_errors:
-      - "On Windows, if the dedicated session directory fails with access denied or OS error 183, retry the same managed command once with the host's appropriate allowed filesystem access."
-      - "Do not enumerate or inspect session-directory contents merely to diagnose that access boundary. If the approved retry fails, report the non-secret error and stop."
     before_every_command:
       - "The managed wrapper runs the health check automatically before the requested command."
       - "Do not invoke a separate health check unless diagnosing a wrapper failure."
       - "Continue when it succeeds with exit code 0."
       - "Re-authenticate only for an authentication error or missing session."
     reauthentication:
+      - "The wrapper performs ordinary expired-session recovery automatically on the same device."
+      - "Do not use another computer's session or bootstrap token to repair this device."
+      - "Allow login and logout to run without an authenticated-session preflight so they can repair authentication."
       - "Run pass-cli logout --force to clear a stale session."
       - "Prefer PROTON_PASS_PERSONAL_ACCESS_TOKEN when the host injects it."
-      - "On macOS, otherwise check Keychain service proton-pass-agent-bootstrap and account default; existing installations may fall back to the former Codex bootstrap entry."
+      - "On macOS, otherwise read Keychain service proton-pass-agent-bootstrap and account default."
+      - "On Windows, otherwise read target proton-pass-agent-bootstrap from Windows Credential Manager."
+      - "On Linux desktops, otherwise read service proton-pass-agent-bootstrap and account default from Secret Service when secret-tool is available; on headless Linux use the host's secure secret injection."
       - "Provide the token only to pass-cli login and remove it before the requested command runs."
-      - "When no token is available, ask the user to complete pass-cli login using Proton's normal web flow."
+      - "When no token is available, report that device-local bootstrap is required and use scripts/proton_pass_bootstrap.py store with a newly issued scoped Proton Pass agent token. Do not default to browser automation."
       - "Run pass-cli info and require exit code 0 before continuing."
       - "Retry the original command once."
+      - "If Proton rejects the stored agent token while creating a new session, report the exact grouped condition without inferring that it expired: Proton does not distinguish invalid, expired, or deleted in this response. The currently issued agent token must be verified and stored on this device; repeated session retries cannot repair a rejected token."
     token_safety:
       - "Use a minimally scoped, expiring Personal Access Token for automation."
       - "Never place a token in this repository, a command argument, logs, chat output, or a plaintext file."
-      - "Use the agent host's secret injection on any platform, or macOS Keychain where available, for unattended recovery."
+      - "Use the agent host's secret injection on any platform, macOS Keychain, Windows Credential Manager, or Linux Secret Service for unattended recovery."
+      - "Use the bundled bootstrap helper to store the token in native secure storage without placing it in argv, logs, chat, or a plaintext file."
+      - "Never pass a token with pass-cli login --personal-access-token because process arguments may be visible to other processes."
 
   discovery:
     commands:
@@ -73,7 +86,7 @@ instructions:
       - "Do not run vault-list, item-list, item-view, or help commands before the contract runner merely to reconstruct the same operation."
       - "Pass --target only when the request or established context identifies a non-secret environment or account hint such as production or staging."
       - "When multiple valid active items remain ambiguous, do not choose silently; report the runner's non-secret candidate list."
-      - "If the runner reports that authentication is required and the consumer was not launched, report the required login and stop instead of scanning connectors, environment files, repositories, or the browser."
+      - "If the runner reports that automatic authentication recovery failed and the consumer was not launched, report whether device bootstrap is missing or the stored agent token was rejected. Stop instead of scanning connectors, environment files, repositories, another computer, or the browser."
 
   item_access:
     required_environment:
