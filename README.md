@@ -10,7 +10,8 @@ supported marketplace, not the identity of the repository.
 - `plugins/odoo-19/` provides minimal, project-neutral Odoo 19 development and
   deployment guidance.
 - `plugins/agent-core/` provides foundational guidance for secure credentials,
-  direct tool use, target confirmation, and result verification.
+  direct tool use, appropriate dependency setup, target confirmation, and
+  result verification.
 - Future adapters for other AI agents can be added without renaming the
   repository.
 

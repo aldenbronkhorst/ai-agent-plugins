@@ -1,6 +1,6 @@
 {
   "name": "agent-core",
-  "version": "0.1.0+codex.20260830135827",
+  "version": "0.1.0+codex.20260830141911",
   "description": "Foundational operating guidance for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
@@ -9,12 +9,13 @@
   "interface": {
     "displayName": "Agent Core",
     "shortDescription": "Secure, direct, and carefully scoped agent work.",
-    "longDescription": "Minimal cross-platform guidance for secure credential handling, direct tool use, target confirmation, and result verification.",
+    "longDescription": "Minimal cross-platform guidance for secure credential handling, direct tool use, appropriate dependency setup, target confirmation, and result verification.",
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
       "Secure credential handling",
-      "Direct tool preference"
+      "Direct tool preference",
+      "Appropriate dependency setup"
     ],
     "defaultPrompt": "Apply the core operating guidance to this task.",
     "brandColor": "#2563EB",
