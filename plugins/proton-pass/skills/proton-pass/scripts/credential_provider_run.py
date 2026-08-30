@@ -350,6 +350,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         session_root = agent_session_root()
         env = prepare_environment(session_root)
         if not ensure_session(pass_cli, env, session_root, injected_token):
+            print(
+                "Credential provider stopped before launching the consumer; "
+                "the destination service was not contacted.",
+                file=sys.stderr,
+            )
             return 1
         candidate = discover_candidate(
             pass_cli,

@@ -1,6 +1,6 @@
 {
   "name": "odoo-19",
-  "version": "0.1.0+codex.20260830182416",
+  "version": "0.1.0+codex.20260830184806",
   "description": "Odoo 19 guidance and an unrestricted JSON-2 request helper.",
   "author": {
     "name": "AI Agent Plugins"

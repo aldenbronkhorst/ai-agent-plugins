@@ -70,6 +70,47 @@ class CredentialProviderTests(unittest.TestCase):
         reference = MODULE.pass_reference("share", "item", "Section.API Key")
         self.assertEqual(reference, "pass://share/item/Section.API%20Key")
 
+    def test_authentication_failure_marks_consumer_as_not_started(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary = Path(temporary_directory)
+            fake_cli = temporary / "pass-cli"
+            contract = temporary / "contract.json"
+            fake_cli.write_text(
+                "#!/bin/sh\nprintf 'not authenticated; run pass-cli login\\n' >&2\nexit 1\n",
+                encoding="utf-8",
+            )
+            fake_cli.chmod(0o700)
+            contract.write_text(json.dumps(CONTRACT), encoding="utf-8")
+            env = os.environ.copy()
+            env.update(
+                {
+                    "PROTON_PASS_CLI_PATH": str(fake_cli),
+                    "PROTON_PASS_SESSION_DIR": str(temporary / "session"),
+                    "PROTON_PASS_PERSONAL_ACCESS_TOKEN": "pst_test::test",
+                }
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "credential_provider_run.py"),
+                    "--contract",
+                    str(contract),
+                    "--",
+                    sys.executable,
+                    "-c",
+                    "raise SystemExit('consumer must not run')",
+                ],
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("before launching the consumer", result.stderr)
+            self.assertIn("destination service was not contacted", result.stderr)
+            self.assertNotIn("consumer must not run", result.stdout)
+
     def test_public_contract_runner_discovers_active_item_and_runs_consumer(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary = Path(temporary_directory)

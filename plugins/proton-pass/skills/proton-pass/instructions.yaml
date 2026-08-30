@@ -4,9 +4,16 @@ instructions:
     - "Proton Pass CLI installed and available as pass-cli or through PROTON_PASS_CLI_PATH."
     - "Supported by Proton Pass CLI: macOS, Linux, and Windows."
 
+  python_runtime:
+    executable: "Use a verified Python 3.9+ executable for all bundled scripts."
+    windows:
+      - "Do not assume py -3 exists. Prefer a compatible Python runtime already supplied by the host or workspace, then verify py -3, python3, or python."
+      - "Do not treat a Microsoft Store execution alias as a usable Python runtime."
+      - "Install a trusted compatible Python only when no supplied or installed runtime is available."
+
   cli:
     unix_entrypoint: "python3 scripts/pass_cli_agent.py <pass-cli arguments>"
-    windows_entrypoint: "py -3 scripts/pass_cli_agent.py <pass-cli arguments>"
+    windows_entrypoint: "<PYTHON_3_9_PLUS> scripts/pass_cli_agent.py <pass-cli arguments>"
     installation_check: "Use the managed entrypoint for the requested command; it resolves PROTON_PASS_CLI_PATH before PATH."
     documentation: "https://protonpass.github.io/pass-cli/"
     rules:
@@ -23,6 +30,9 @@ instructions:
       - "On macOS, reuse the former Codex agent session directory when it already exists so existing installations migrate without interruption."
     concurrency:
       - "Use the wrapper's cross-platform authentication lock so concurrent agents do not race during login."
+    access_errors:
+      - "On Windows, if the dedicated session directory fails with access denied or OS error 183, retry the same managed command once with the host's appropriate allowed filesystem access."
+      - "Do not enumerate or inspect session-directory contents merely to diagnose that access boundary. If the approved retry fails, report the non-secret error and stop."
     before_every_command:
       - "The managed wrapper runs the health check automatically before the requested command."
       - "Do not invoke a separate health check unless diagnosing a wrapper failure."
@@ -55,13 +65,15 @@ instructions:
 
   credential_contracts:
     unix_entrypoint: "python3 scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
-    windows_entrypoint: "py -3 scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
+    windows_entrypoint: "<PYTHON_3_9_PLUS> scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
     rules:
       - "Use this fast path when a service skill supplies a compatible credential contract and direct credential-backed execution is suitable."
       - "The runner performs its own managed session check, searches active items, ignores trashed items, inspects candidate field names internally, and injects all matched fields through one masked pass-cli run operation."
+      - "Pass a known contract path directly to the runner; do not open or inspect the contract first during routine use because the runner validates it."
       - "Do not run vault-list, item-list, item-view, or help commands before the contract runner merely to reconstruct the same operation."
       - "Pass --target only when the request or established context identifies a non-secret environment or account hint such as production or staging."
       - "When multiple valid active items remain ambiguous, do not choose silently; report the runner's non-secret candidate list."
+      - "If the runner reports that authentication is required and the consumer was not launched, report the required login and stop instead of scanning connectors, environment files, repositories, or the browser."
 
   item_access:
     required_environment:
