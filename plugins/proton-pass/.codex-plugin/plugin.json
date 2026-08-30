@@ -1,18 +1,19 @@
 {
   "name": "proton-pass",
-  "version": "0.1.0+codex.20260830133643",
-  "description": "Secure Proton Pass CLI access and session recovery for AI agents.",
+  "version": "0.1.0+codex.20260830133933",
+  "description": "Proton Pass credential provider and secure session recovery for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Proton Pass",
-    "shortDescription": "Use Proton Pass securely from AI agents.",
-    "longDescription": "Portable Proton Pass CLI guidance and a dependency-free wrapper for safe credential access and session recovery on macOS, Linux, and Windows.",
+    "shortDescription": "Use Proton Pass as an agent credential provider.",
+    "longDescription": "Portable Proton Pass credential-provider guidance and a dependency-free wrapper for safe credential retrieval and session recovery on macOS, Linux, and Windows.",
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
+      "Credential provider for external services",
       "Safe Proton Pass CLI access",
       "Automatic PAT session recovery",
       "Secret-output safeguards"

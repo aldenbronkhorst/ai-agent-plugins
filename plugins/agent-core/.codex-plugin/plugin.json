@@ -1,6 +1,6 @@
 {
   "name": "agent-core",
-  "version": "0.1.0+codex.20260830133643",
+  "version": "0.1.0+codex.20260830133933",
   "description": "Foundational operating guidance for AI agents.",
   "author": {
     "name": "AI Agent Plugins"

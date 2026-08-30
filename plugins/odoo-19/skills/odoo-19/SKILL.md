@@ -1,12 +1,11 @@
 ---
 name: odoo-19
-description: Access, develop, review, test, and deploy Odoo 19 systems and customizations. Use for Odoo 19 connectivity, authentication, models, views, security, reports, migrations, integrations, and record changes.
+description: Use, develop, review, test, and deploy Odoo 19 systems and customizations. Use for normal Odoo operations, models, views, security, reports, migrations, integrations, and record changes.
 ---
 
 # Odoo 19
 
 - Target Odoo 19.
-- Before reporting that Odoo access is unavailable or asking for credentials, check existing authenticated access and available password-manager or credential-provider skills. Use the applicable provider securely, then verify access with a safe read-only request.
 - Prefer the Odoo API for normal application work, including reading or changing records and running supported business operations. Do not default to browser automation.
 - For server-side technical work such as modules, services, logs, configuration, or command-line diagnostics, use SSH when access is available.
 - Use the browser only when the task specifically requires the Odoo interface or the required operation is unavailable through the API or SSH.
