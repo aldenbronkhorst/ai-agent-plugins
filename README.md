@@ -9,6 +9,8 @@ supported marketplace, not the identity of the repository.
   recovery for agents. It is the first marketplace entry.
 - `plugins/odoo-19/` provides minimal, project-neutral Odoo 19 development and
   deployment guidance.
+- `plugins/agent-core/` provides foundational guidance for secure credentials,
+  direct tool use, target confirmation, and result verification.
 - Future adapters for other AI agents can be added without renaming the
   repository.
 
@@ -30,6 +32,12 @@ Install the Odoo 19 workflow when needed:
 
 ```bash
 codex plugin add odoo-19@ai-agent-plugins
+```
+
+Install the general operating guidance:
+
+```bash
+codex plugin add agent-core@ai-agent-plugins
 ```
 
 Start a new Codex task after installing so the plugin skill is loaded.
@@ -56,6 +64,7 @@ cached installation. Then commit and push the change.
 codex plugin marketplace upgrade ai-agent-plugins
 codex plugin add proton-pass@ai-agent-plugins
 codex plugin add odoo-19@ai-agent-plugins
+codex plugin add agent-core@ai-agent-plugins
 ```
 
 Start a new task after updating.
