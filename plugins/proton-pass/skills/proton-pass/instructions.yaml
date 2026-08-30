@@ -7,10 +7,12 @@ instructions:
   cli:
     unix_entrypoint: "python3 scripts/pass_cli_agent.py <pass-cli arguments>"
     windows_entrypoint: "py -3 scripts/pass_cli_agent.py <pass-cli arguments>"
-    installation_check: "pass-cli --version"
+    installation_check: "Use the managed entrypoint for the requested command; it resolves PROTON_PASS_CLI_PATH before PATH."
     documentation: "https://protonpass.github.io/pass-cli/"
     rules:
       - "Use the managed entrypoint for every pass-cli command."
+      - "Treat the managed entrypoint as the authoritative availability check; do not conclude that the CLI is missing merely because pass-cli is absent from PATH."
+      - "Before installing or reinstalling the CLI, run the managed entrypoint and read its complete non-secret error."
       - "Read the complete command output and exit code before retrying a failure."
 
   session:
