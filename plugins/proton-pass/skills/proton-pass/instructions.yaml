@@ -53,6 +53,16 @@ instructions:
       - "Ignore trashed items. When names collide, select the active item by Share ID and Item ID, then reuse that non-secret reference for the rest of the task."
       - "Confirm that the required vault or item is visible; otherwise report the complete non-secret error."
 
+  credential_contracts:
+    unix_entrypoint: "python3 scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
+    windows_entrypoint: "py -3 scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
+    rules:
+      - "Use this fast path when a service skill supplies a compatible credential contract and direct credential-backed execution is suitable."
+      - "The runner performs its own managed session check, searches active items, ignores trashed items, inspects candidate field names internally, and injects all matched fields through one masked pass-cli run operation."
+      - "Do not run vault-list, item-list, item-view, or help commands before the contract runner merely to reconstruct the same operation."
+      - "Pass --target only when the request or established context identifies a non-secret environment or account hint such as production or staging."
+      - "When multiple valid active items remain ambiguous, do not choose silently; report the runner's non-secret candidate list."
+
   item_access:
     required_environment:
       name: "PROTON_PASS_AGENT_REASON"

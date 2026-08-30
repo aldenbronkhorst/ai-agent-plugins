@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 
 AUTH_MARKERS = (
@@ -34,6 +34,7 @@ REASON_REQUIRED = {
 }
 GENERIC_KEYCHAIN = ("proton-pass-agent-bootstrap", "default")
 LEGACY_KEYCHAIN = ("com.openai.codex.proton-pass-bootstrap", "codex-agent")
+KEYCHAIN_TIMEOUT_SECONDS = 5
 
 
 def redact(text: str) -> str:
@@ -142,7 +143,7 @@ def emit(result: subprocess.CompletedProcess[str]) -> None:
         sys.stderr.write(redact(result.stderr))
 
 
-def macos_keychain_token(env: dict[str, str]) -> str | None:
+def macos_keychain_token(env: dict[str, str]) -> Optional[str]:
     if sys.platform != "darwin":
         return None
 
@@ -161,18 +162,22 @@ def macos_keychain_token(env: dict[str, str]) -> str | None:
         if (service, account) in seen:
             continue
         seen.add((service, account))
-        result = run_capture(
-            [
-                security,
-                "find-generic-password",
-                "-s",
-                service,
-                "-a",
-                account,
-                "-w",
-            ],
-            env,
-        )
+        try:
+            result = run_capture(
+                [
+                    security,
+                    "find-generic-password",
+                    "-s",
+                    service,
+                    "-a",
+                    account,
+                    "-w",
+                ],
+                env,
+                timeout=KEYCHAIN_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            continue
         if result.returncode != 0:
             continue
         token = result.stdout.strip()
@@ -185,7 +190,7 @@ def macos_keychain_token(env: dict[str, str]) -> str | None:
     return None
 
 
-def resolve_token(env: dict[str, str], injected_token: str | None) -> str | None:
+def resolve_token(env: dict[str, str], injected_token: Optional[str]) -> Optional[str]:
     if injected_token:
         if not TOKEN_PATTERN.fullmatch(injected_token):
             raise RuntimeError("The supplied Proton Pass token has an invalid format")
@@ -197,7 +202,7 @@ def recover_session(
     pass_cli: str,
     env: dict[str, str],
     session_root: Path,
-    injected_token: str | None,
+    injected_token: Optional[str],
 ) -> bool:
     with authentication_lock(session_root):
         status = run_capture([pass_cli, "info"], env)
@@ -242,7 +247,7 @@ def ensure_session(
     pass_cli: str,
     env: dict[str, str],
     session_root: Path,
-    injected_token: str | None,
+    injected_token: Optional[str],
 ) -> bool:
     status = run_capture([pass_cli, "info"], env)
     if status.returncode == 0:

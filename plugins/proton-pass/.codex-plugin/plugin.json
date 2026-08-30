@@ -1,6 +1,6 @@
 {
   "name": "proton-pass",
-  "version": "0.1.0+codex.20260830174551",
+  "version": "0.1.0+codex.20260830182416",
   "description": "Proton Pass credential provider and secure session recovery for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
@@ -9,11 +9,12 @@
   "interface": {
     "displayName": "Proton Pass",
     "shortDescription": "Use Proton Pass as an agent credential provider.",
-    "longDescription": "Portable Proton Pass credential-provider guidance and a dependency-free wrapper for safe credential retrieval and session recovery on macOS, Linux, and Windows.",
+    "longDescription": "Portable Proton Pass credential-provider guidance, public service-contract discovery, and dependency-free wrappers for safe credential injection and session recovery on macOS, Linux, and Windows.",
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
       "Credential provider for external services",
+      "Automatic active-item discovery from public service contracts",
       "Safe Proton Pass CLI access",
       "Automatic PAT session recovery",
       "Secret-output safeguards"

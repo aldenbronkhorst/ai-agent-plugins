@@ -7,4 +7,6 @@ Use the bundled managed entrypoint for Proton Pass CLI operations; it resolves `
 
 For routine credential use, do not run a separate session check: the managed entrypoint performs it. Minimize round trips and resolve multiple known `pass://` field references through one managed `pass-cli run` operation when possible.
 
+When a service skill publishes a credential contract, prefer the bundled `scripts/credential_provider_run.py` fast path. It discovers matching active items, ignores trashed items, maps the declared fields, and launches the consumer through one masked `pass-cli run` operation. It does not require service-specific or user-specific configuration. If no compatible item is found or multiple valid active items remain ambiguous, report that non-secret result and fall back or ask for the missing target; do not silently guess.
+
 Read and follow `instructions.yaml` completely before every Proton Pass operation.

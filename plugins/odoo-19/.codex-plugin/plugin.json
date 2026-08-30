@@ -1,7 +1,7 @@
 {
   "name": "odoo-19",
-  "version": "0.1.0+codex.20260830174551",
-  "description": "Simple development and deployment guidance for Odoo 19.",
+  "version": "0.1.0+codex.20260830182416",
+  "description": "Odoo 19 guidance and an unrestricted JSON-2 request helper.",
   "author": {
     "name": "AI Agent Plugins"
   },
@@ -9,11 +9,12 @@
   "interface": {
     "displayName": "Odoo 19",
     "shortDescription": "Work safely and simply with Odoo 19.",
-    "longDescription": "Minimal guidance for developing, testing, and deploying Odoo 19 changes without project-specific credentials or configuration.",
+    "longDescription": "Minimal guidance for using, developing, testing, and deploying Odoo 19, with a generic JSON-2 request helper that does not restrict available models or methods.",
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
       "Odoo 19 development",
+      "Generic Odoo 19 JSON-2 requests",
       "Staging and deployment safeguards"
     ],
     "defaultPrompt": "Help me work on an Odoo 19 project.",
