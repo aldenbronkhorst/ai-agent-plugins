@@ -1,6 +1,6 @@
 {
   "name": "odoo-19",
-  "version": "0.1.0+codex.20260830135827",
+  "version": "0.1.0+codex.20260830142414",
   "description": "Simple development and deployment guidance for Odoo 19.",
   "author": {
     "name": "AI Agent Plugins"
@@ -20,7 +20,6 @@
     "websiteURL": "https://www.odoo.com/",
     "brandColor": "#714B67",
     "composerIcon": "./assets/logo.svg",
-    "logo": "./assets/logo.svg",
-    "logoDark": "./assets/logo-dark.svg"
+    "logo": "./assets/logo.svg"
   }
 }
