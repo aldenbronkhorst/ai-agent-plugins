@@ -17,7 +17,6 @@ instructions:
 
   session:
     health_check: "pass-cli info"
-    connection_check: "pass-cli test"
     session_directory:
       - "Honor PROTON_PASS_SESSION_DIR when the host provides it."
       - "Otherwise use a dedicated per-user agent session directory appropriate for macOS, Linux, or Windows."
@@ -25,7 +24,8 @@ instructions:
     concurrency:
       - "Use the wrapper's cross-platform authentication lock so concurrent agents do not race during login."
     before_every_command:
-      - "Run the health check."
+      - "The managed wrapper runs the health check automatically before the requested command."
+      - "Do not invoke a separate health check unless diagnosing a wrapper failure."
       - "Continue when it succeeds with exit code 0."
       - "Re-authenticate only for an authentication error or missing session."
     reauthentication:
@@ -45,10 +45,12 @@ instructions:
     commands:
       - "pass-cli vault list --output json"
       - "pass-cli share list --output json"
-      - "pass-cli item list --output json"
       - "pass-cli item list --vault-name <VAULT_NAME> --output json"
     rules:
       - "Use --output json for programmatic parsing."
+      - "Skip discovery when the required pass:// item or field reference is already known."
+      - "When discovery is required, list vaults once, then list only the likely vault; do not call item list without a vault unless a default vault is configured."
+      - "Ignore trashed items. When names collide, select the active item by Share ID and Item ID, then reuse that non-secret reference for the rest of the task."
       - "Confirm that the required vault or item is visible; otherwise report the complete non-secret error."
 
   item_access:
@@ -59,6 +61,7 @@ instructions:
       - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE>"
       - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE> --field <FIELD_NAME>"
       - "pass-cli item view pass://<SHARE_ID>/<ITEM_ID>"
+      - "pass-cli run -- <COMMAND>"
     reason_required_for:
       - "item view"
       - "item create"
@@ -68,6 +71,9 @@ instructions:
       - "vault update"
     rules:
       - "Retrieve only the item or field required for the task."
+      - "Prefer direct pass:// references using Share ID and Item ID when names are ambiguous."
+      - "When one command needs multiple fields, assign each environment variable its pass:// field reference and execute the consumer once with pass-cli run; keep output masking enabled."
+      - "Do not inspect the complete item merely to rediscover field names already known for the operation."
       - "Never print, paste, return, or persist secret field values."
 
   recovery:
