@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { runGraphRequest } from "../scripts/graph_request.mjs";
 
-function createDependencies({ cached = false, authenticatedAccount = "first@example.com" } = {}) {
+function createDependencies({
+  cached = false,
+  authenticatedAccount = "first@example.com",
+  silentError = null,
+} = {}) {
   const state = {
     deleted: 0,
     deviceCodeCalls: 0,
@@ -23,6 +27,9 @@ function createDependencies({ cached = false, authenticatedAccount = "first@exam
 
     async acquireTokenSilent() {
       state.silentCalls += 1;
+      if (silentError) {
+        throw silentError;
+      }
       return {
         accessToken: "silent-token",
         account: { username: authenticatedAccount },
@@ -82,6 +89,17 @@ const baseOptions = {
   assert.equal(state.fetchCalls, 1);
   assert.equal(state.persistenceConfiguration.usePlaintextFileOnLinux, false);
   assert.equal(state.persistenceConfiguration.dataProtectionScope, "CurrentUser");
+}
+
+{
+  const { dependencies, state } = createDependencies({
+    cached: true,
+    silentError: { errorCode: "invalid_grant" },
+  });
+  await runGraphRequest(baseOptions, dependencies);
+  assert.equal(state.silentCalls, 1);
+  assert.equal(state.deviceCodeCalls, 1);
+  assert.equal(state.fetchCalls, 1);
 }
 
 {

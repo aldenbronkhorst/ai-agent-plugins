@@ -63,6 +63,7 @@ function isInteractionRequired(error) {
       "interaction_required",
       "login_required",
       "consent_required",
+      "invalid_grant",
       "no_tokens_found",
       "no_account_in_silent_request",
     ].includes(code)
