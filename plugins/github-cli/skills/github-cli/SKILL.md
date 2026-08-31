@@ -10,10 +10,11 @@ description: Use GitHub through the official GitHub CLI, Git, and SSH or HTTPS f
 ## Authentication
 
 - Check `gh auth status` before starting a new login. If `gh` is unavailable, install the current official CLI through the system's trusted package manager, then continue.
-- If authentication is needed, use `gh auth login --hostname <host> --web`. Let the user complete GitHub's browser flow, then verify the intended identity with `gh auth status` or `gh api user`. Never use `--insecure-storage`, print a token, call token-showing flags, or ask the user to paste a token when the web flow is suitable.
-- Let the environment determine the Git transport. Reuse a valid SSH setup when appropriate; otherwise use HTTPS and `gh auth setup-git`. Do not generate, upload, replace, or delete SSH or signing keys unless required for the requested setup.
+- If the intended account is not authenticated, use `gh auth login --hostname <host> --web --git-protocol https`. GitHub CLI displays a one-time code and opens GitHub's device-verification page; the user may complete it in that browser or on another device. Let the user sign in and approve access, then verify the authenticated identity with `gh auth status` or `gh api user`.
+- Treat this native OAuth login and `gh`'s operating-system credential storage as the normal credential path. Do not search a password manager for a GitHub password or personal access token before trying it, and never use `--insecure-storage`, print a token, call token-showing flags, or ask the user to paste a token when the device flow is suitable.
+- Use HTTPS and `gh auth setup-git` as the portable default, especially for multiple accounts. Reuse an existing valid SSH setup when the user or environment already prefers it, but do not create, upload, replace, or delete SSH or signing keys merely to complete ordinary setup.
 - Treat multiple accounts and GitHub hosts as normal. Inspect known accounts with `gh auth status` and select the intended one with `gh auth switch --hostname <host> --user <login>`. Before a mutation, verify the active account, host, and repository rather than assuming the last-used account is correct.
-- Use `gh auth refresh --scopes <scopes>` only when the requested operation lacks a required scope. For headless automation, obtain `GH_TOKEN` or `GH_ENTERPRISE_TOKEN` from an approved secure credential source and keep it out of files, command output, logs, and source control.
+- Use `gh auth refresh --scopes <scopes>` only when the requested operation lacks a required scope. Use a password manager or another approved secure credential source only for headless automation that genuinely requires `GH_TOKEN` or `GH_ENTERPRISE_TOKEN`, and keep those values out of files, command output, logs, and source control.
 
 ## Operations
 
