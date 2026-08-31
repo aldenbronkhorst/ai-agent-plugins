@@ -1,0 +1,171 @@
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Account,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("GET", "POST", "PUT", "PATCH", "DELETE")]
+    [string]$Method,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$Uri,
+
+    [string[]]$Scopes = @("User.Read"),
+    [string]$TenantId,
+    [string]$Environment = "Global",
+    [string]$BodyJson,
+    [string]$HeadersJson,
+    [string]$OutputFilePath,
+    [switch]$ForceSignIn
+)
+
+$ErrorActionPreference = "Stop"
+
+function Get-PluginStateDirectory {
+    if ($env:MICROSOFT_GRAPH_PLUGIN_STATE_DIR) {
+        return $env:MICROSOFT_GRAPH_PLUGIN_STATE_DIR
+    }
+    if ($IsWindows) {
+        return Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "AI Agent Plugins/Microsoft Graph"
+    }
+    if ($env:XDG_STATE_HOME) {
+        return Join-Path $env:XDG_STATE_HOME "ai-agent-plugins/microsoft-graph"
+    }
+    return Join-Path ([Environment]::GetFolderPath("UserProfile")) ".local/state/ai-agent-plugins/microsoft-graph"
+}
+
+function Find-NodeRuntime {
+    if ($env:MICROSOFT_GRAPH_PLUGIN_NODE_PATH) {
+        return $env:MICROSOFT_GRAPH_PLUGIN_NODE_PATH
+    }
+
+    $command = Get-Command node -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+
+    $nativeRuntimeRoot = Split-Path $PSHOME -Parent
+    $candidates = if ($IsWindows) {
+        @(
+            (Join-Path $nativeRuntimeRoot "node/node.exe"),
+            (Join-Path ([Environment]::GetFolderPath("ProgramFiles")) "nodejs/node.exe")
+        )
+    }
+    else {
+        @(
+            (Join-Path $nativeRuntimeRoot "node/bin/node"),
+            (Join-Path $nativeRuntimeRoot "node/node")
+        )
+    }
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+            return $candidate
+        }
+    }
+    throw "Node.js 20 or later is required for Microsoft authentication. Install a current Node.js runtime for the user and retry."
+}
+
+function Find-NpmCommand([string]$NodePath) {
+    if ($env:MICROSOFT_GRAPH_PLUGIN_NPM_PATH) {
+        return @{ Type = "Command"; Path = $env:MICROSOFT_GRAPH_PLUGIN_NPM_PATH }
+    }
+
+    $command = Get-Command npm -ErrorAction SilentlyContinue
+    if ($command) {
+        return @{ Type = "Command"; Path = $command.Source }
+    }
+
+    $nodeDirectory = Split-Path $NodePath -Parent
+    $commandCandidates = if ($IsWindows) {
+        @((Join-Path $nodeDirectory "npm.cmd"))
+    }
+    else {
+        @((Join-Path $nodeDirectory "npm"))
+    }
+    foreach ($candidate in $commandCandidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return @{ Type = "Command"; Path = $candidate }
+        }
+    }
+
+    $cliCandidates = @(
+        (Join-Path $nodeDirectory "node_modules/npm/bin/npm-cli.js"),
+        (Join-Path (Split-Path $nodeDirectory -Parent) "lib/node_modules/npm/bin/npm-cli.js")
+    )
+    foreach ($candidate in $cliCandidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return @{ Type = "NodeScript"; Path = $candidate }
+        }
+    }
+    throw "npm is required once to install Microsoft's pinned MSAL runtime. Install npm for the user and retry."
+}
+
+function Install-MsalRuntime([string]$NodePath, [string]$RuntimeDirectory) {
+    $packageSource = Join-Path $PSScriptRoot "package.json"
+    $lockSource = Join-Path $PSScriptRoot "package-lock.json"
+    $sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $lockSource).Hash.ToLowerInvariant()
+    $markerPath = Join-Path $RuntimeDirectory ".package-lock.sha256"
+    $installedHash = if (Test-Path -LiteralPath $markerPath) {
+        (Get-Content -LiteralPath $markerPath -Raw).Trim()
+    }
+    else {
+        ""
+    }
+
+    $msalModule = Join-Path $RuntimeDirectory "node_modules/@azure/msal-node/package.json"
+    $extensionModule = Join-Path $RuntimeDirectory "node_modules/@azure/msal-node-extensions/package.json"
+    if ($installedHash -eq $sourceHash -and (Test-Path $msalModule) -and (Test-Path $extensionModule)) {
+        return
+    }
+
+    $null = New-Item -ItemType Directory -Path $RuntimeDirectory -Force
+    Copy-Item -LiteralPath $packageSource -Destination (Join-Path $RuntimeDirectory "package.json") -Force
+    Copy-Item -LiteralPath $lockSource -Destination (Join-Path $RuntimeDirectory "package-lock.json") -Force
+
+    $npm = Find-NpmCommand $NodePath
+    $npmArguments = @("ci", "--omit=dev", "--no-audit", "--no-fund", "--prefix", $RuntimeDirectory)
+    if ($npm.Type -eq "NodeScript") {
+        & $NodePath $npm.Path @npmArguments
+    }
+    else {
+        & $npm.Path @npmArguments
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Microsoft's MSAL runtime installation failed with exit code $LASTEXITCODE."
+    }
+    Set-Content -LiteralPath $markerPath -Value $sourceHash -NoNewline
+}
+
+$stateDirectory = Get-PluginStateDirectory
+$runtimeDirectory = Join-Path $stateDirectory "msal-node-v1"
+$nodePath = Find-NodeRuntime
+$nodeVersionText = (& $nodePath --version).TrimStart("v")
+if ([version]$nodeVersionText -lt [version]"20.0.0") {
+    throw "Node.js 20 or later is required; found $nodeVersionText."
+}
+
+Install-MsalRuntime $nodePath $runtimeDirectory
+
+$nodeArguments = @(
+    (Join-Path $PSScriptRoot "graph_request.mjs"),
+    "--runtime-dir", $runtimeDirectory,
+    "--state-dir", $stateDirectory,
+    "--account", $Account,
+    "--method", $Method,
+    "--uri", $Uri,
+    "--scopes-json", ($Scopes | ConvertTo-Json -Compress),
+    "--environment", $Environment
+)
+if ($TenantId) { $nodeArguments += @("--tenant-id", $TenantId) }
+if ($BodyJson) { $nodeArguments += @("--body-json", $BodyJson) }
+if ($HeadersJson) { $nodeArguments += @("--headers-json", $HeadersJson) }
+if ($OutputFilePath) { $nodeArguments += @("--output-file-path", $OutputFilePath) }
+if ($ForceSignIn) { $nodeArguments += "--force-sign-in" }
+
+& $nodePath @nodeArguments
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
