@@ -9,7 +9,8 @@ param(
     [string[]]$Scopes,
 
     [string]$TenantId = "common",
-    [string]$Environment = "Global"
+    [string]$Environment = "Global",
+    [switch]$ForceDeviceCode
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,7 +26,7 @@ if (-not $tenant) {
     throw "TenantId cannot be empty. Use common, organizations, consumers, or a tenant ID."
 }
 
-$resolvedScopes = @("User.Read") + @($Scopes) |
+$graphScopes = @("User.Read") + @($Scopes) |
     ForEach-Object { $_.Trim() } |
     Where-Object { $_ } |
     Select-Object -Unique
@@ -40,112 +41,237 @@ if (-not $module) {
 }
 
 Import-Module $module.Path -Force
-Add-Type -Path (Join-Path $module.ModuleBase "Dependencies/Core/Azure.Core.dll")
-Add-Type -Path (Join-Path $module.ModuleBase "Dependencies/Azure.Identity.dll")
-
 $graphEnvironment = Get-MgEnvironment -Name $Environment | Select-Object -First 1
 if (-not $graphEnvironment) {
     throw "Microsoft Graph environment '$Environment' is not configured."
 }
 
+# The official SDK path is reliable on non-Windows systems and keeps its own
+# secure cache. Windows uses the protocol path below to avoid WAM and the
+# SDK's current normal-token/CAE double device-code acquisition.
+if (-not $IsWindows) {
+    Connect-MgGraph `
+        -Scopes $graphScopes `
+        -TenantId $tenant `
+        -Environment $Environment `
+        -UseDeviceCode `
+        -ContextScope CurrentUser `
+        -NoWelcome
+    return
+}
+
+Add-Type -AssemblyName System.Security.Cryptography.ProtectedData
+
 function Get-StateDirectory {
-    if ($env:XDG_STATE_HOME) {
-        return Join-Path $env:XDG_STATE_HOME "ai-agent-plugins/microsoft-graph"
-    }
-
     $localData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
-    if ($localData) {
-        return Join-Path $localData "AI Agent Plugins/Microsoft Graph"
+    if (-not $localData) {
+        throw "The current Windows account has no local application-data directory."
     }
-
-    return Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) ".ai-agent-plugins/microsoft-graph"
+    return Join-Path $localData "AI Agent Plugins/Microsoft Graph"
 }
 
 function Get-AccountKey {
     $keyText = "$($accountHint.ToLowerInvariant())`n$($tenant.ToLowerInvariant())`n$($Environment.ToLowerInvariant())"
     $keyBytes = [Text.Encoding]::UTF8.GetBytes($keyText)
-    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($keyBytes)).ToLowerInvariant()
+    try {
+        return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($keyBytes)).ToLowerInvariant()
+    }
+    finally {
+        [Array]::Clear($keyBytes, 0, $keyBytes.Length)
+    }
 }
 
 $stateDirectory = Get-StateDirectory
-$recordPath = Join-Path $stateDirectory "$(Get-AccountKey).authrecord.json"
+$accountKey = Get-AccountKey
+$refreshTokenPath = Join-Path $stateDirectory "$accountKey.refresh-token"
+$entropy = [Text.Encoding]::UTF8.GetBytes("ai-agent-plugins.microsoft-graph:$accountKey")
 $null = New-Item -ItemType Directory -Path $stateDirectory -Force
 
-$cacheOptions = [Azure.Identity.TokenCachePersistenceOptions]::new()
-$cacheOptions.Name = "ai-agent-plugins.microsoft-graph"
+function Read-RefreshToken {
+    if (-not (Test-Path -LiteralPath $refreshTokenPath)) {
+        return $null
+    }
 
-$deviceCodeCallback = [System.Func[Azure.Identity.DeviceCodeInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task]] {
-    param($code, $cancellationToken)
-    [Console]::WriteLine($code.Message)
-    return [System.Threading.Tasks.Task]::CompletedTask
-}
-
-$credentialOptions = [Azure.Identity.DeviceCodeCredentialOptions]::new()
-$credentialOptions.ClientId = $graphPowerShellClientId
-$credentialOptions.TenantId = $tenant
-$credentialOptions.AuthorityHost = [Uri]$graphEnvironment.AzureADEndpoint
-$credentialOptions.TokenCachePersistenceOptions = $cacheOptions
-$credentialOptions.DeviceCodeCallback = $deviceCodeCallback
-
-if (Test-Path -LiteralPath $recordPath) {
-    $recordStream = [IO.File]::OpenRead($recordPath)
     try {
-        $credentialOptions.AuthenticationRecord = [Azure.Identity.AuthenticationRecord]::DeserializeAsync($recordStream).GetAwaiter().GetResult()
-    }
-    finally {
-        $recordStream.Dispose()
-    }
-}
-
-$credential = [Azure.Identity.DeviceCodeCredential]::new($credentialOptions)
-$tokenRequest = [Azure.Core.TokenRequestContext]::new([string[]]$resolvedScopes, $null, $null, $null, $true)
-$cancellation = [Threading.CancellationTokenSource]::new([TimeSpan]::FromMinutes(15))
-
-try {
-    if (-not $credentialOptions.AuthenticationRecord) {
-        $record = $credential.AuthenticateAsync($tokenRequest, $cancellation.Token).GetAwaiter().GetResult()
-
-        if (
-            $record.Username -and
-            -not [string]::Equals($record.Username, $accountHint, [StringComparison]::OrdinalIgnoreCase)
-        ) {
-            throw "Microsoft authenticated '$($record.Username)' instead of '$accountHint'. Retry and choose the intended account on the device-login page."
-        }
-
-        $temporaryRecordPath = "$recordPath.$([Guid]::NewGuid().ToString('N')).tmp"
-        $recordStream = [IO.File]::Open($temporaryRecordPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $protectedBytes = [IO.File]::ReadAllBytes($refreshTokenPath)
+        $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+            $protectedBytes,
+            $entropy,
+            [Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
         try {
-            $record.SerializeAsync($recordStream).GetAwaiter().GetResult()
+            return [Text.Encoding]::UTF8.GetString($plainBytes)
         }
         finally {
-            $recordStream.Dispose()
-        }
-        Move-Item -LiteralPath $temporaryRecordPath -Destination $recordPath -Force
-
-        if (-not $IsWindows) {
-            try {
-                [IO.File]::SetUnixFileMode(
-                    $recordPath,
-                    [IO.UnixFileMode]::UserRead -bor [IO.UnixFileMode]::UserWrite
-                )
-            }
-            catch {
-                # The record selects an account; tokens remain in the OS-protected cache.
-            }
+            [Array]::Clear($plainBytes, 0, $plainBytes.Length)
+            [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
         }
     }
-
-    # Use the same CAE-enabled request for sign-in and token acquisition. This
-    # avoids the Graph SDK's current normal-token/CAE-token double prompt.
-    $accessToken = $credential.GetTokenAsync($tokenRequest, $cancellation.Token).GetAwaiter().GetResult()
-    $secureToken = ConvertTo-SecureString $accessToken.Token -AsPlainText -Force
-    try {
-        Connect-MgGraph -AccessToken $secureToken -Environment $Environment -NoWelcome
-    }
-    finally {
-        $secureToken.Dispose()
+    catch {
+        Remove-Item -LiteralPath $refreshTokenPath -Force -ErrorAction SilentlyContinue
+        return $null
     }
 }
+
+function Save-RefreshToken([string]$RefreshToken) {
+    if (-not $RefreshToken) {
+        throw "Microsoft did not return the refresh token required for persistent sign-in."
+    }
+
+    $plainBytes = [Text.Encoding]::UTF8.GetBytes($RefreshToken)
+    $protectedBytes = [Security.Cryptography.ProtectedData]::Protect(
+        $plainBytes,
+        $entropy,
+        [Security.Cryptography.DataProtectionScope]::CurrentUser
+    )
+    $temporaryPath = "$refreshTokenPath.$([Guid]::NewGuid().ToString('N')).tmp"
+
+    try {
+        [IO.File]::WriteAllBytes($temporaryPath, $protectedBytes)
+        Move-Item -LiteralPath $temporaryPath -Destination $refreshTokenPath -Force
+    }
+    finally {
+        [Array]::Clear($plainBytes, 0, $plainBytes.Length)
+        [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
+        if (Test-Path -LiteralPath $temporaryPath) {
+            Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Clear-RefreshToken {
+    Remove-Item -LiteralPath $refreshTokenPath -Force -ErrorAction SilentlyContinue
+}
+
+function Invoke-OAuthPost([string]$Uri, [hashtable]$Body) {
+    $response = Invoke-WebRequest `
+        -Method Post `
+        -Uri $Uri `
+        -ContentType "application/x-www-form-urlencoded" `
+        -Body $Body `
+        -SkipHttpErrorCheck
+
+    $content = $null
+    if ($response.Content) {
+        $content = $response.Content | ConvertFrom-Json
+    }
+
+    return [pscustomobject]@{
+        StatusCode = [int]$response.StatusCode
+        Content = $content
+    }
+}
+
+$authority = $graphEnvironment.AzureADEndpoint.TrimEnd("/")
+$deviceCodeEndpoint = "$authority/$tenant/oauth2/v2.0/devicecode"
+$tokenEndpoint = "$authority/$tenant/oauth2/v2.0/token"
+$oauthScopes = @("openid", "profile", "offline_access") + $graphScopes | Select-Object -Unique
+$scopeText = $oauthScopes -join " "
+$tokenResult = $null
+$refreshTokenToSave = $null
+
+if ($ForceDeviceCode) {
+    Clear-RefreshToken
+}
+
+$refreshToken = Read-RefreshToken
+if ($refreshToken) {
+    $refreshResult = Invoke-OAuthPost -Uri $tokenEndpoint -Body @{
+        client_id = $graphPowerShellClientId
+        grant_type = "refresh_token"
+        refresh_token = $refreshToken
+        scope = $scopeText
+    }
+
+    if ($refreshResult.StatusCode -eq 200) {
+        $tokenResult = $refreshResult.Content
+        $refreshTokenToSave = if ($tokenResult.refresh_token) {
+            $tokenResult.refresh_token
+        }
+        else {
+            $refreshToken
+        }
+    }
+    elseif ($refreshResult.Content.error -in @("invalid_grant", "interaction_required", "consent_required")) {
+        Clear-RefreshToken
+    }
+    else {
+        throw "Microsoft token refresh failed: $($refreshResult.Content.error)."
+    }
+}
+
+if (-not $tokenResult) {
+    $deviceResult = Invoke-OAuthPost -Uri $deviceCodeEndpoint -Body @{
+        client_id = $graphPowerShellClientId
+        scope = $scopeText
+    }
+
+    if ($deviceResult.StatusCode -ne 200) {
+        throw "Microsoft device-code request failed: $($deviceResult.Content.error)."
+    }
+
+    [Console]::WriteLine($deviceResult.Content.message)
+    $pollInterval = [Math]::Max([int]$deviceResult.Content.interval, 5)
+    $expiresAt = [DateTimeOffset]::UtcNow.AddSeconds([int]$deviceResult.Content.expires_in)
+
+    while ([DateTimeOffset]::UtcNow -lt $expiresAt) {
+        Start-Sleep -Seconds $pollInterval
+        $pollResult = Invoke-OAuthPost -Uri $tokenEndpoint -Body @{
+            client_id = $graphPowerShellClientId
+            grant_type = "urn:ietf:params:oauth:grant-type:device_code"
+            device_code = $deviceResult.Content.device_code
+        }
+
+        if ($pollResult.StatusCode -eq 200) {
+            $tokenResult = $pollResult.Content
+            $refreshTokenToSave = $tokenResult.refresh_token
+            break
+        }
+
+        switch ($pollResult.Content.error) {
+            "authorization_pending" { continue }
+            "slow_down" {
+                $pollInterval += 5
+                continue
+            }
+            "authorization_declined" { throw "Microsoft sign-in was declined." }
+            "expired_token" { throw "The Microsoft device code expired before sign-in completed." }
+            default { throw "Microsoft device-code sign-in failed: $($pollResult.Content.error)." }
+        }
+    }
+
+    if (-not $tokenResult) {
+        throw "The Microsoft device code expired before sign-in completed."
+    }
+}
+
+$secureAccessToken = ConvertTo-SecureString $tokenResult.access_token -AsPlainText -Force
+try {
+    Connect-MgGraph -AccessToken $secureAccessToken -Environment $Environment -NoWelcome
+}
 finally {
-    $cancellation.Dispose()
+    $secureAccessToken.Dispose()
+}
+
+$me = Invoke-MgGraphRequest -Method GET -Uri 'v1.0/me?$select=id,displayName,userPrincipalName,mail'
+$authenticatedNames = @($me.userPrincipalName, $me.mail) |
+    Where-Object { $_ } |
+    ForEach-Object { $_.ToString().Trim() }
+
+if (-not ($authenticatedNames | Where-Object {
+    [string]::Equals($_, $accountHint, [StringComparison]::OrdinalIgnoreCase)
+})) {
+    Clear-RefreshToken
+    Disconnect-MgGraph | Out-Null
+    throw "Microsoft authenticated a different account. Retry and choose '$accountHint' on the device-login page."
+}
+
+Save-RefreshToken -RefreshToken $refreshTokenToSave
+[Array]::Clear($entropy, 0, $entropy.Length)
+
+[pscustomobject]@{
+    Account = $authenticatedNames | Select-Object -First 1
+    UserId = $me.id
+    TenantId = (Get-MgContext).TenantId
+    Scopes = (Get-MgContext).Scopes
 }
