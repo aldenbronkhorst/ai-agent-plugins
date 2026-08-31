@@ -18,6 +18,8 @@ param(
     [string]$BodyJson,
     [string]$HeadersJson,
     [string]$OutputFilePath,
+    [ValidateSet("Task", "MaximumWorkOrSchool", "MaximumPersonal")]
+    [string]$AccessProfile = "Task",
     [switch]$ForceSignIn
 )
 

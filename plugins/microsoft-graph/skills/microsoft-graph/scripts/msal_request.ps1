@@ -18,10 +18,40 @@ param(
     [string]$BodyJson,
     [string]$HeadersJson,
     [string]$OutputFilePath,
+    [ValidateSet("Task", "MaximumWorkOrSchool", "MaximumPersonal")]
+    [string]$AccessProfile = "Task",
     [switch]$ForceSignIn
 )
 
 $ErrorActionPreference = "Stop"
+
+function Resolve-Scopes([string[]]$RequestedScopes, [string]$Profile) {
+    if ($Profile -eq "Task") {
+        return @($RequestedScopes)
+    }
+
+    $profilePath = Join-Path $PSScriptRoot "maximum_scopes.json"
+    $profiles = Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
+    $propertyName = if ($Profile -eq "MaximumWorkOrSchool") {
+        "maximumWorkOrSchool"
+    }
+    else {
+        "maximumPersonal"
+    }
+    $profileScopes = @($profiles.PSObject.Properties[$propertyName].Value)
+    if ($profileScopes.Count -eq 0) {
+        throw "The Microsoft Graph access profile '$Profile' contains no scopes."
+    }
+
+    $resolvedScopes = @($RequestedScopes + $profileScopes | Select-Object -Unique)
+    $scopeText = $resolvedScopes -join " "
+    if ($resolvedScopes.Count -gt 155 -or $scopeText.Length -gt 3800) {
+        throw "The Microsoft Graph access profile '$Profile' exceeds Microsoft's single-consent limits."
+    }
+    return $resolvedScopes
+}
+
+$Scopes = Resolve-Scopes $Scopes $AccessProfile
 
 function Get-PluginStateDirectory {
     if ($env:MICROSOFT_GRAPH_PLUGIN_STATE_DIR) {
