@@ -1,0 +1,27 @@
+{
+  "name": "github-cli",
+  "version": "0.1.0+codex.20260831210512",
+  "description": "Terminal-first GitHub access through GitHub CLI and Git.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "GitHub CLI",
+    "shortDescription": "Use GitHub through the terminal.",
+    "longDescription": "Terminal-first guidance for securely using the official GitHub CLI, Git, SSH or HTTPS, and the GitHub API without a connector.",
+    "developerName": "AI Agent Plugins",
+    "category": "Developer",
+    "capabilities": [
+      "GitHub CLI authentication and multi-account use",
+      "Repositories, pull requests, issues, and releases",
+      "GitHub Actions and workflow operations",
+      "Direct GitHub API requests with gh api"
+    ],
+    "defaultPrompt": "Use GitHub CLI and Git for this GitHub task.",
+    "websiteURL": "https://cli.github.com/",
+    "brandColor": "#24292F",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}
