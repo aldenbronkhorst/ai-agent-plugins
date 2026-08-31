@@ -58,9 +58,12 @@ Start a new Codex task after installing so the plugin skill is loaded.
 
 ## Microsoft Graph on a new device
 
-Install PowerShell 7 and the current supported Microsoft Graph PowerShell
-modules. Each device signs in to its own accounts with Microsoft's device-code
-flow. The plugin stores no account credentials or tokens.
+Install PowerShell 7 and the official Microsoft Graph PowerShell modules. On
+Windows, the plugin uses `Microsoft.Graph.Authentication` 2.33.0 for device-code
+authentication to avoid the forced-WAM regression in 2.34 and later; other
+versions may remain installed side by side. Each device signs in to its own
+accounts with Microsoft's device-code flow. The plugin stores no account
+credentials or tokens.
 
 ## Proton Pass on a new device
 
