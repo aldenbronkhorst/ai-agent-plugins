@@ -1,0 +1,27 @@
+{
+  "name": "azure-cli",
+  "version": "0.1.0+codex.20260901234701",
+  "description": "Terminal-first Microsoft Azure resource management through the official Azure CLI.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Azure CLI",
+    "shortDescription": "Manage Azure through the terminal.",
+    "longDescription": "Portable guidance for Azure CLI authentication and resource management across accounts, tenants, subscriptions, and Azure clouds.",
+    "developerName": "AI Agent Plugins",
+    "category": "Developer",
+    "capabilities": [
+      "Device-code authentication and multiple Azure accounts",
+      "Tenants, subscriptions, resource groups, and RBAC",
+      "Azure resources, deployments, and service configuration",
+      "Structured Azure Resource Manager requests"
+    ],
+    "defaultPrompt": "Use Azure CLI for this Azure resource-management task.",
+    "websiteURL": "https://learn.microsoft.com/cli/azure/",
+    "brandColor": "#0078D4",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}
