@@ -5,7 +5,7 @@ description: Use the official Azure CLI for Azure subscriptions, resource groups
 
 # Azure CLI
 
-- Use the current official `az` CLI for Azure resource management. Do not substitute Microsoft Graph, a connector, an MCP server, or browser automation when Azure CLI or Azure Resource Manager can perform the task faithfully.
+- Use the current official `az` CLI as the portable default for Azure resource management. Azure PowerShell or a service-specific official CLI remains available when it is materially better suited to the task; this skill is guidance, not an operation allowlist. Do not substitute Microsoft Graph, a connector, an MCP server, or browser automation when a suitable structured Azure interface can perform the task faithfully.
 - If `az` is unavailable, install the current Azure CLI through the platform's trusted package manager. Install Azure CLI extensions or companion tools such as Bicep, `kubectl`, Helm, or AzCopy only when the requested operation actually needs them.
 
 ## Accounts and authentication

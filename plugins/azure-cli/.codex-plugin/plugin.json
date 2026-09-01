@@ -1,6 +1,6 @@
 {
   "name": "azure-cli",
-  "version": "0.1.0+codex.20260901234701",
+  "version": "0.1.0+codex.20260901234806",
   "description": "Terminal-first Microsoft Azure resource management through the official Azure CLI.",
   "author": {
     "name": "AI Agent Plugins"
