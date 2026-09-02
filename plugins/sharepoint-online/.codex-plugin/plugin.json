@@ -1,6 +1,6 @@
 {
   "name": "sharepoint-online",
-  "version": "0.1.0+codex.20260902092501",
+  "version": "0.1.0+codex.20260902092632",
   "description": "Terminal-first SharePoint Online data and administration across accounts and tenants.",
   "author": {
     "name": "AI Agent Plugins"

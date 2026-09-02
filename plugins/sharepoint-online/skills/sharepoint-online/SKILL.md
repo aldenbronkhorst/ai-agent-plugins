@@ -6,6 +6,7 @@ description: Use and administer SharePoint Online across accounts and tenants. U
 # SharePoint Online
 
 - Use direct structured interfaces rather than browser automation when they can perform the task faithfully. Choose by capability, not a fixed tool order: Microsoft Graph handles many sites, lists, drives, files, and permissions; PnP PowerShell handles broad cross-platform SharePoint operations; Microsoft's SharePoint Online Management Shell remains available on Windows when a required tenant-administration capability is not suitably exposed by Graph or PnP.
+- If the suitable current module is missing, install it from its trusted publisher rather than switching to an inferior interface solely because it is unavailable locally.
 - Reuse the Microsoft Graph authentication workflow for Graph-supported SharePoint work. Do not start a separate SharePoint login merely because this skill was selected.
 
 ## Administration and authentication
