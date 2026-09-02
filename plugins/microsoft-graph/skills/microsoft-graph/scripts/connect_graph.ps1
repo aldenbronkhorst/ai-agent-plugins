@@ -57,6 +57,31 @@ if (-not $IsWindows) {
         -UseDeviceCode `
         -ContextScope CurrentUser `
         -NoWelcome
+
+    $me = Invoke-MgGraphRequest -Method GET -Uri 'v1.0/me?$select=id,displayName,userPrincipalName,mail'
+    $authenticatedNames = @($me.userPrincipalName, $me.mail) |
+        Where-Object { $_ } |
+        ForEach-Object { $_.ToString().Trim() }
+    if (-not ($authenticatedNames | Where-Object {
+        [string]::Equals($_, $accountHint, [StringComparison]::OrdinalIgnoreCase)
+    })) {
+        Disconnect-MgGraph | Out-Null
+        throw "Microsoft authenticated a different account. Retry and choose '$accountHint' on the device-login page."
+    }
+
+    $context = Get-MgContext
+    $missingScopes = @($graphScopes | Where-Object { $context.Scopes -notcontains $_ })
+    if ($missingScopes) {
+        Disconnect-MgGraph | Out-Null
+        throw "Microsoft did not grant all requested Graph permissions: $($missingScopes -join ', ')."
+    }
+
+    [pscustomobject]@{
+        Account = $authenticatedNames | Select-Object -First 1
+        UserId = $me.id
+        TenantId = $context.TenantId
+        Scopes = $context.Scopes
+    }
     return
 }
 
@@ -266,12 +291,19 @@ if (-not ($authenticatedNames | Where-Object {
     throw "Microsoft authenticated a different account. Retry and choose '$accountHint' on the device-login page."
 }
 
+$context = Get-MgContext
+$missingScopes = @($graphScopes | Where-Object { $context.Scopes -notcontains $_ })
+if ($missingScopes) {
+    Disconnect-MgGraph | Out-Null
+    throw "Microsoft did not grant all requested Graph permissions: $($missingScopes -join ', ')."
+}
+
 Save-RefreshToken -RefreshToken $refreshTokenToSave
 [Array]::Clear($entropy, 0, $entropy.Length)
 
 [pscustomobject]@{
     Account = $authenticatedNames | Select-Object -First 1
     UserId = $me.id
-    TenantId = (Get-MgContext).TenantId
-    Scopes = (Get-MgContext).Scopes
+    TenantId = $context.TenantId
+    Scopes = $context.Scopes
 }

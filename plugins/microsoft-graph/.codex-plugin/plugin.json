@@ -1,6 +1,6 @@
 {
   "name": "microsoft-graph",
-  "version": "0.1.0+codex.20260831210512",
+  "version": "0.1.0+codex.20260902200010",
   "description": "Multi-account Microsoft Graph access for Outlook and Microsoft 365.",
   "author": {
     "name": "AI Agent Plugins"
@@ -13,7 +13,7 @@
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
-      "Multi-account Microsoft Graph authentication",
+      "Maximum compatible multi-account Graph setup",
       "Outlook mail, calendar, and contacts",
       "Microsoft 365 files and collaboration",
       "Generic Microsoft Graph REST requests"

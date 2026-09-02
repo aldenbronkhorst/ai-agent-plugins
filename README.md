@@ -16,8 +16,8 @@ supported marketplace, not the identity of the repository.
   for Outlook and Microsoft 365 through the official PowerShell SDK.
 - `plugins/exchange-online/` provides Exchange administration through the
   official PowerShell module with persistent device-code authentication.
-- `plugins/sharepoint-online/` routes SharePoint work through Graph, PnP, or
-  the official management shell according to capability.
+- `plugins/sharepoint-online/` routes SharePoint work through Microsoft Graph
+  or the official management shell according to capability.
 - Future adapters for other AI agents can be added without renaming the
   repository.
 
