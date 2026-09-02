@@ -1,0 +1,27 @@
+{
+  "name": "exchange-online",
+  "version": "0.1.0+codex.20260902000316",
+  "description": "Terminal-first Exchange Online administration through the official PowerShell module.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Exchange Online",
+    "shortDescription": "Administer Exchange Online from the terminal.",
+    "longDescription": "Portable guidance for Exchange Online PowerShell administration across accounts and tenants, including mailboxes, permissions, groups, domains, mail flow, and compliance sessions.",
+    "developerName": "AI Agent Plugins",
+    "category": "Productivity",
+    "capabilities": [
+      "Device-code authentication across accounts and tenants",
+      "Mailbox and shared-mailbox administration",
+      "Permissions, groups, domains, and mail flow",
+      "Exchange and Security & Compliance PowerShell"
+    ],
+    "defaultPrompt": "Use Exchange Online PowerShell with the intended account and tenant for this administration task.",
+    "websiteURL": "https://learn.microsoft.com/powershell/exchange/connect-to-exchange-online-powershell",
+    "brandColor": "#0078D4",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

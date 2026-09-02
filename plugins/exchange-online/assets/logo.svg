@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Exchange Online">
+  <defs>
+    <linearGradient id="bg" x1="28" y1="24" x2="226" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B9BE8"/>
+      <stop offset="1" stop-color="#0754B8"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="64" y1="83" x2="194" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8EEFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
+  <path d="M57 73h142c10 0 18 8 18 18v86c0 10-8 18-18 18H57c-10 0-18-8-18-18V91c0-10 8-18 18-18Z" fill="#0A65C9" opacity=".58"/>
+  <path d="M48 91c0-7 6-13 13-13h134c7 0 13 6 13 13v79c0 7-6 13-13 13H61c-7 0-13-6-13-13V91Z" fill="url(#fold)"/>
+  <path d="m52 88 67 53c5 4 13 4 18 0l67-53" fill="none" stroke="#0875D1" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m52 175 53-46m99 46-53-46" fill="none" stroke="#3FA4E9" stroke-width="10" stroke-linecap="round"/>
+  <rect x="25" y="67" width="82" height="122" rx="17" fill="#064DA6"/>
+  <path d="M48 99h40v13H62v16h23v13H62v18h27v13H48V99Z" fill="#FFFFFF"/>
+</svg>
