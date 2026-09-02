@@ -1,6 +1,6 @@
 {
   "name": "agent-core",
-  "version": "0.1.0+codex.20260830185905",
+  "version": "0.1.0+codex.20260902212518",
   "description": "Foundational operating guidance for AI agents.",
   "author": {
     "name": "AI Agent Plugins"
@@ -15,7 +15,7 @@
     "capabilities": [
       "Secure credential handling",
       "Credential-provider fast paths",
-      "Direct tool preference",
+      "Direct access and browser-session preference",
       "Appropriate dependency setup"
     ],
     "defaultPrompt": "Apply the core operating guidance to this task.",
