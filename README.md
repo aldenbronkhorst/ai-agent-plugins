@@ -14,6 +14,10 @@ supported marketplace, not the identity of the repository.
   result verification.
 - `plugins/microsoft-graph/` provides multi-account Microsoft Graph guidance
   for Outlook and Microsoft 365 through the official PowerShell SDK.
+- `plugins/exchange-online/` provides Exchange administration through the
+  official PowerShell module with persistent device-code authentication.
+- `plugins/sharepoint-online/` routes SharePoint work through Graph, PnP, or
+  the official management shell according to capability.
 - Future adapters for other AI agents can be added without renaming the
   repository.
 
@@ -54,15 +58,29 @@ Install the multi-account Microsoft Graph workflow:
 codex plugin add microsoft-graph@ai-agent-plugins
 ```
 
+Install Exchange or SharePoint administration when needed:
+
+```bash
+codex plugin add exchange-online@ai-agent-plugins
+codex plugin add sharepoint-online@ai-agent-plugins
+```
+
 Start a new Codex task after installing so the plugin skill is loaded.
 
 ## Microsoft Graph on a new device
 
 Install PowerShell 7 and the current official Microsoft Graph PowerShell
-modules (`Microsoft.Graph.Authentication` 2.37.0 or newer). On Windows, the
-plugin explicitly uses `Connect-MgGraph -UseDeviceCode` instead of the default
-WAM login route. Each device signs in to its own accounts with Microsoft's
-supported device-code flow. The plugin stores no account credentials or tokens.
+modules (`Microsoft.Graph.Authentication` 2.37.0 or newer). Each device signs
+in to its own accounts with Microsoft's supported device-code flow and keeps
+its authentication cache locally. The plugin stores no credentials or tokens.
+
+## Exchange and SharePoint on a new device
+
+Exchange uses Azure CLI's device-code login as a persistent identity broker,
+then passes a short-lived token in memory to the official Exchange module. No
+Azure subscription is required. SharePoint reuses Graph where possible and
+uses PnP PowerShell's `-DeviceLogin -PersistLogin` flow for SharePoint-native
+work. Each account is authorized separately on each device.
 
 ## Proton Pass on a new device
 
@@ -88,6 +106,8 @@ codex plugin add proton-pass@ai-agent-plugins
 codex plugin add odoo-19@ai-agent-plugins
 codex plugin add agent-core@ai-agent-plugins
 codex plugin add microsoft-graph@ai-agent-plugins
+codex plugin add exchange-online@ai-agent-plugins
+codex plugin add sharepoint-online@ai-agent-plugins
 ```
 
 Start a new task after updating.

@@ -1,6 +1,6 @@
 {
   "name": "exchange-online",
-  "version": "0.1.0+codex.20260902000316",
+  "version": "0.1.0+codex.20260902092501",
   "description": "Terminal-first Exchange Online administration through the official PowerShell module.",
   "author": {
     "name": "AI Agent Plugins"
@@ -9,11 +9,11 @@
   "interface": {
     "displayName": "Exchange Online",
     "shortDescription": "Administer Exchange Online from the terminal.",
-    "longDescription": "Portable guidance for Exchange Online PowerShell administration across accounts and tenants, including mailboxes, permissions, groups, domains, mail flow, and compliance sessions.",
+    "longDescription": "Portable Exchange Online PowerShell administration with persistent device-code authentication across accounts and tenants, including mailboxes, permissions, groups, domains, mail flow, and compliance sessions.",
     "developerName": "AI Agent Plugins",
     "category": "Productivity",
     "capabilities": [
-      "Device-code authentication across accounts and tenants",
+      "Persistent device-code authentication across accounts and tenants",
       "Mailbox and shared-mailbox administration",
       "Permissions, groups, domains, and mail flow",
       "Exchange and Security & Compliance PowerShell"
