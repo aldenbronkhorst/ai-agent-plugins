@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="SharePoint Online">
+  <defs>
+    <linearGradient id="bg" x1="26" y1="25" x2="226" y2="229" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12A7A0"/>
+      <stop offset="1" stop-color="#006B72"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="52" y1="66" x2="154" y2="195" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#087F83"/>
+      <stop offset="1" stop-color="#005B63"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
+  <circle cx="173" cy="77" r="39" fill="#55D6C5"/>
+  <circle cx="198" cy="137" r="31" fill="#31BDAF"/>
+  <circle cx="161" cy="180" r="36" fill="#7BE2D2"/>
+  <path d="M112 76c19-20 50-26 76-13 26 14 39 44 31 72-7 29-33 50-63 51-29 1-56-19-66-46-9-23-1-48 22-64Z" fill="#018B8D" opacity=".76"/>
+  <rect x="29" y="60" width="112" height="136" rx="23" fill="url(#panel)"/>
+  <path d="M96 91c-8-4-17-6-26-6-21 0-34 11-34 28 0 18 13 24 30 30 11 4 16 7 16 13 0 6-5 9-14 9-10 0-21-4-29-9v20c8 4 19 7 30 7 23 0 37-11 37-29 0-17-10-24-29-31-13-5-17-7-17-13 0-5 5-8 13-8 8 0 16 2 23 6V91Z" fill="#FFFFFF"/>
+</svg>

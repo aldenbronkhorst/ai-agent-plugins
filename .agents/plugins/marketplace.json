@@ -87,6 +87,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "sharepoint-online",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sharepoint-online"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "name": "sharepoint-online",
+  "version": "0.1.0+codex.20260902000938",
+  "description": "Terminal-first SharePoint Online data and administration across accounts and tenants.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SharePoint Online",
+    "shortDescription": "Use and administer SharePoint Online.",
+    "longDescription": "Portable guidance for SharePoint sites, lists, libraries, permissions, sharing, OneDrive, and tenant administration using the appropriate structured Microsoft interface.",
+    "developerName": "AI Agent Plugins",
+    "category": "Productivity",
+    "capabilities": [
+      "SharePoint sites, lists, libraries, and files",
+      "Permissions, sharing, and site administration",
+      "Tenant and site-collection settings",
+      "Multi-account and multi-tenant operation"
+    ],
+    "defaultPrompt": "Use the suitable structured SharePoint interface with the intended account, tenant, and site.",
+    "websiteURL": "https://learn.microsoft.com/powershell/sharepoint/sharepoint-online/introduction-sharepoint-online-management-shell",
+    "brandColor": "#038387",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}
