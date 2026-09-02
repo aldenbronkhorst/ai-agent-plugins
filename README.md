@@ -79,8 +79,9 @@ its authentication cache locally. The plugin stores no credentials or tokens.
 Exchange uses Azure CLI's device-code login as a persistent identity broker,
 then passes a short-lived token in memory to the official Exchange module. No
 Azure subscription is required. SharePoint reuses Graph where possible and
-uses PnP PowerShell's `-DeviceLogin -PersistLogin` flow for SharePoint-native
-work. Each account is authorized separately on each device.
+uses Microsoft's SharePoint Online Management Shell for administration that
+Graph does not expose. Graph provides persistent device-code authentication;
+the official SharePoint shell uses its supported system-browser login instead.
 
 ## Proton Pass on a new device
 
