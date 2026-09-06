@@ -1,6 +1,6 @@
 {
   "name": "exchange-online",
-  "version": "0.1.0+codex.20260902092501",
+  "version": "0.1.0+codex.20260906002826",
   "description": "Terminal-first Exchange Online administration through the official PowerShell module.",
   "author": {
     "name": "AI Agent Plugins"

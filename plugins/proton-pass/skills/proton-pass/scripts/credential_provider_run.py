@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.parse
 from pathlib import Path
@@ -210,29 +211,14 @@ def vault_rank(vault: dict[str, Any], aliases: list[str]) -> tuple[int, str]:
     return (-score, name_key)
 
 
-def candidate_score(
+def candidate_matches_target(
     candidate: dict[str, Any],
-    aliases: list[str],
     target: Optional[str],
     service: dict[str, Any],
-) -> int:
-    title_key = normalized(candidate["title"])
-    score = 20 if "api" in title_key else 0
-    for alias in aliases:
-        alias_key = normalized(alias)
-        if title_key == alias_key:
-            score += 100
-        elif title_key.startswith(alias_key):
-            score += 75
-        elif alias_key in title_key:
-            score += 50
+) -> bool:
     terms = target_terms(target, service)
-    if terms:
-        combined = normalized(f"{candidate['vault_name']} {candidate['title']}")
-        if any(normalized(term) not in combined for term in terms):
-            return -1
-        score += 1000
-    return score
+    combined = set(words(f"{candidate['vault_name']} {candidate['title']}"))
+    return all(term in combined for term in terms)
 
 
 def pass_reference(share_id: str, item_id: str, field_name: str) -> str:
@@ -300,8 +286,7 @@ def discover_candidate(
         f"Supply stored {service['name']} credentials to the requested service client."
     )
     for candidate in title_candidates:
-        score = candidate_score(candidate, aliases, target, service)
-        if score < 0:
+        if not candidate_matches_target(candidate, target, service):
             continue
         details = json_command(
             pass_cli,
@@ -323,7 +308,6 @@ def discover_candidate(
         mapped = map_contract_fields(contract, extract_item_field_names(details))
         if mapped is not None:
             candidate["fields"] = mapped
-            candidate["score"] = score
             complete.append(candidate)
 
     if not complete:
@@ -331,17 +315,15 @@ def discover_candidate(
         raise DiscoveryError(
             f"No active Proton Pass item matched {service['name']}{target_text} and its required fields."
         )
-    best_score = max(candidate["score"] for candidate in complete)
-    best = [candidate for candidate in complete if candidate["score"] == best_score]
-    if len(best) != 1:
+    if len(complete) != 1:
         labels = ", ".join(
-            f"{candidate['vault_name']}/{candidate['title']}" for candidate in best
+            f"{candidate['vault_name']}/{candidate['title']}" for candidate in complete
         )
         raise DiscoveryError(
             f"Multiple active Proton Pass items match {service['name']}: {labels}. "
             "Provide a non-secret --target hint."
         )
-    return best[0]
+    return complete[0]
 
 
 def parser() -> argparse.ArgumentParser:
@@ -367,7 +349,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         contract = load_contract(args.contract)
         pass_cli = pass_cli_path()
-        session_root = agent_session_root()
+        session_root = agent_session_root(injected_token)
         env = prepare_environment(session_root)
         if not ensure_session(pass_cli, env, session_root, injected_token):
             print(
@@ -390,13 +372,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 candidate["share_id"], candidate["item_id"], field_name
             )
         result = run_capture([pass_cli, "run", "--", *command], run_env, timeout=180)
-        if is_auth_failure(result):
-            if not recover_session(pass_cli, run_env, session_root, injected_token):
-                return result.returncode or 1
-            result = run_capture([pass_cli, "run", "--", *command], run_env, timeout=180)
         emit(result)
         return result.returncode
-    except (DiscoveryError, OSError, RuntimeError) as exc:
+    except (DiscoveryError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(redact(str(exc)), file=sys.stderr)
         return 1
     finally:

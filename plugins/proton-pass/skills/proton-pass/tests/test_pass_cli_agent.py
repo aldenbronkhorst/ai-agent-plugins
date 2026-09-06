@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
 import os
 import subprocess
 import sys
@@ -24,6 +26,7 @@ BOOTSTRAP_SPEC.loader.exec_module(BOOTSTRAP)
 
 FAKE_CLI = r'''#!/usr/bin/env python3
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -50,13 +53,20 @@ if args == ["login"]:
         raise SystemExit(0)
     print("This personal access token is invalid, expired or has been deleted", file=sys.stderr)
     raise SystemExit(1)
-if args in (["--version"], ["update", "--yes"]):
+if args == ["login", "--interactive"]:
+    if os.environ.get("PROTON_PASS_PERSONAL_ACCESS_TOKEN"):
+        raise SystemExit(3)
+    print("interactive-login-requested")
+    raise SystemExit(0)
+if args in (["--version"], ["--help"], ["update", "--yes"]):
     print("pass-cli test version")
     raise SystemExit(0)
 if state.exists():
     if os.environ.get("PROTON_PASS_PERSONAL_ACCESS_TOKEN"):
         print("token remained in consumer environment", file=sys.stderr)
         raise SystemExit(3)
+    if args[:2] == ["run", "--"]:
+        raise SystemExit(subprocess.run(args[2:], check=False).returncode)
     print("requested-command-ok")
     raise SystemExit(0)
 print("This operation requires an authenticated client", file=sys.stderr)
@@ -236,11 +246,136 @@ class PassCliAgentTests(unittest.TestCase):
         self.assertEqual(version_calls, ["--version"])
         self.assertEqual(update_calls, ["update --yes"])
 
-    def test_login_without_token_does_not_start_web_flow(self) -> None:
-        result, calls = self.run_wrapper(None, "login")
+    def test_malformed_injection_does_not_block_diagnostics_updates_or_logout(self) -> None:
+        for arguments in (("--version",), ("--help",), ("update", "--yes"), ("logout", "--force")):
+            with self.subTest(arguments=arguments):
+                result, calls = self.run_wrapper("malformed-synthetic-token", *arguments)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(calls, [" ".join(arguments)])
+                self.assertNotIn("malformed-synthetic-token", result.stdout + result.stderr)
+
+    def test_interactive_login_ignores_malformed_injection(self) -> None:
+        result, calls = self.run_wrapper("malformed-synthetic-token", "login", "--interactive")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(calls, ["login --interactive"])
+        self.assertIn("interactive-login-requested", result.stdout)
+        self.assertNotIn("malformed-synthetic-token", result.stdout + result.stderr)
+
+    def test_unattended_login_still_rejects_malformed_injection(self) -> None:
+        result, calls = self.run_wrapper("malformed-synthetic-token", "login")
         self.assertEqual(result.returncode, 1)
-        self.assertIn("No device-local", result.stderr)
         self.assertEqual(calls, [])
+        self.assertIn("invalid format", result.stderr)
+        self.assertNotIn("malformed-synthetic-token", result.stdout + result.stderr)
+
+    def test_login_without_token_does_not_start_web_flow(self) -> None:
+        # Keep this check in-process so no native credential store is queried.
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(
+            AGENT.sys, "argv", ["pass_cli_agent.py", "login"]
+        ), mock.patch.object(AGENT, "pass_cli_path", return_value="fake-cli"), mock.patch.object(
+            AGENT, "prepare_environment", return_value={}
+        ), mock.patch.object(AGENT, "resolve_token", return_value=None), mock.patch.object(
+            AGENT, "run_capture"
+        ) as run, contextlib.redirect_stderr(io.StringIO()) as stderr:
+            code = AGENT.main()
+        self.assertEqual(code, 1)
+        self.assertIn("No device-local", stderr.getvalue())
+        run.assert_not_called()
+
+    def test_successful_and_failed_consumers_are_never_replayed(self) -> None:
+        for exit_code in (0, 17):
+            with self.subTest(exit_code=exit_code), tempfile.TemporaryDirectory() as directory:
+                count = Path(directory) / "consumer-count"
+                consumer = (
+                    "from pathlib import Path; "
+                    f"p = Path({str(count)!r}); "
+                    "p.write_text(p.read_text() + 'run\\n' if p.exists() else 'run\\n'); "
+                    "print('consumer: not authenticated in historical log'); "
+                    f"raise SystemExit({exit_code})"
+                )
+                result, calls = self.run_wrapper(
+                    "pst_valid::valid", "run", "--", sys.executable, "-c", consumer
+                )
+                self.assertEqual(result.returncode, exit_code, result.stderr)
+                self.assertEqual(count.read_text().splitlines(), ["run"])
+                self.assertEqual(sum(call.startswith("run ") for call in calls), 1)
+
+    def test_success_output_is_not_authentication_failure(self) -> None:
+        self.assertFalse(AGENT.is_auth_failure(
+            subprocess.CompletedProcess([], 0, "not authenticated", "session expired")
+        ))
+
+    def test_login_network_error_does_not_request_token_replacement(self) -> None:
+        responses = [
+            subprocess.CompletedProcess([], 1, "", "not authenticated"),
+            subprocess.CompletedProcess([], 0, "", ""),
+            subprocess.CompletedProcess([], 1, "", "Network error: DNS lookup failed\n"),
+        ]
+        with mock.patch.object(
+            AGENT, "authentication_lock", side_effect=lambda _: contextlib.nullcontext()
+        ), mock.patch.object(AGENT, "run_capture", side_effect=responses), contextlib.redirect_stderr(
+            io.StringIO()
+        ) as stderr:
+            recovered = AGENT.recover_session("fake-cli", {}, Path("unused"), "pst_valid::valid")
+        self.assertFalse(recovered)
+        self.assertIn("DNS lookup failed", stderr.getvalue())
+        self.assertNotIn("rejected", stderr.getvalue())
+        self.assertNotIn("store it", stderr.getvalue())
+
+    def test_mutations_and_consumers_are_not_eligible_for_provider_retry(self) -> None:
+        self.assertTrue(AGENT.can_retry_provider_command(["item", "view", "pass://share/item"]))
+        self.assertFalse(AGENT.can_retry_provider_command(["item", "create", "login"]))
+        self.assertFalse(AGENT.can_retry_provider_command(["run", "--", "consumer"]))
+
+    def test_native_bootstrap_selectors_bind_distinct_reusable_session_paths(self) -> None:
+        for platform, selector in (
+            ("darwin", "PROTON_PASS_AGENT_KEYCHAIN_ACCOUNT"),
+            ("linux", "PROTON_PASS_AGENT_SECRET_ACCOUNT"),
+            ("win32", "PROTON_PASS_AGENT_CREDENTIAL_TARGET"),
+        ):
+            with self.subTest(platform=platform), mock.patch.object(
+                AGENT.sys, "platform", platform
+            ), mock.patch.dict(os.environ, {"PROTON_PASS_SESSION_DIR": "test-session"}, clear=True):
+                default = AGENT.agent_session_root()
+                os.environ[selector] = "account-a"
+                account_a = AGENT.agent_session_root()
+                os.environ[selector] = "account-b"
+                account_b = AGENT.agent_session_root()
+                os.environ[selector] = "account-a"
+                self.assertEqual(AGENT.agent_session_root(), account_a)
+                self.assertEqual(default, Path("test-session"))
+                self.assertEqual(len({default, account_a, account_b}), 3)
+
+    def test_injected_accounts_cannot_reuse_each_others_healthy_session(self) -> None:
+        sessions = {}
+        logins = []
+
+        def fake_capture(arguments, env, timeout=90):
+            session = env["PROTON_PASS_SESSION_DIR"]
+            operation = arguments[1:]
+            if operation == ["info"]:
+                if session in sessions:
+                    return subprocess.CompletedProcess(arguments, 0, "authenticated", "")
+                return subprocess.CompletedProcess(arguments, 1, "", "not authenticated")
+            if operation == ["logout", "--force"]:
+                sessions.pop(session, None)
+            elif operation == ["login"]:
+                sessions[session] = env["PROTON_PASS_PERSONAL_ACCESS_TOKEN"]
+                logins.append(session)
+            else:
+                self.fail(f"Unexpected command: {operation}")
+            return subprocess.CompletedProcess(arguments, 0, "", "")
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ, {"PROTON_PASS_SESSION_DIR": str(Path(directory) / "session")}, clear=True
+        ), mock.patch.object(AGENT, "run_capture", side_effect=fake_capture):
+            for token in ("pst_accountA::synthetic", "pst_accountB::synthetic", "pst_accountA::synthetic"):
+                root = AGENT.agent_session_root(token)
+                self.assertNotIn(token, str(root))
+                env = AGENT.prepare_environment(root)
+                self.assertTrue(AGENT.ensure_session("fake-cli", env, root, token))
+                self.assertEqual(sessions[str(root)], token)
+        self.assertEqual(len(logins), 2)
 
     def test_windows_credential_manager_is_a_token_source(self) -> None:
         with mock.patch.object(AGENT.sys, "platform", "win32"), mock.patch.object(

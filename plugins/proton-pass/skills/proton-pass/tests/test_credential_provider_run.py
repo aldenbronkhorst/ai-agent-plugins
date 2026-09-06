@@ -82,14 +82,8 @@ class CredentialProviderTests(unittest.TestCase):
         }
 
         self.assertEqual(MODULE.target_terms("Odoo Production", service), ["production"])
-        self.assertGreater(
-            MODULE.candidate_score(production, ["odoo"], "Odoo Production", service),
-            0,
-        )
-        self.assertEqual(
-            MODULE.candidate_score(staging, ["odoo"], "Odoo Production", service),
-            -1,
-        )
+        self.assertTrue(MODULE.candidate_matches_target(production, "Odoo Production", service))
+        self.assertFalse(MODULE.candidate_matches_target(staging, "Odoo Production", service))
 
     def test_service_only_target_does_not_restrict_candidates(self) -> None:
         service = {"name": "Example Service", "aliases": ["example"]}
@@ -99,10 +93,39 @@ class CredentialProviderTests(unittest.TestCase):
         }
 
         self.assertEqual(MODULE.target_terms("Example Service", service), [])
-        self.assertGreater(
-            MODULE.candidate_score(candidate, ["example"], "Example Service", service),
-            0,
-        )
+        self.assertTrue(MODULE.candidate_matches_target(candidate, "Example Service", service))
+
+    def test_target_account_must_match_a_word_not_part_of_another_account(self) -> None:
+        candidate = {"vault_name": "Automation", "title": "Example API Joanne"}
+        self.assertFalse(MODULE.candidate_matches_target(candidate, "Ann", CONTRACT["service"]))
+
+    def test_all_complete_candidates_require_a_target_regardless_of_title_score(self) -> None:
+        items = [
+            {"id": "prod", "state": "Active", "title": "Example Production"},
+            {"id": "stage", "state": "Active", "title": "Example API Staging"},
+        ]
+
+        def fake_command(cli, arguments, *args, **kwargs):
+            if arguments[:2] == ["vault", "list"]:
+                return {"vaults": [{"name": "Automation", "share_id": "share"}]}
+            if arguments[:2] == ["item", "list"]:
+                return {"items": items}
+            if arguments[:2] == ["item", "view"]:
+                return {"content": {"extra_fields": [
+                    {"name": "URL", "content": {"Text": "synthetic-url"}},
+                    {"name": "API Key", "content": {"Hidden": "synthetic-key"}},
+                ]}}
+            self.fail(f"Unexpected provider command: {arguments}")
+
+        with mock.patch.object(MODULE, "json_command", side_effect=fake_command):
+            with self.assertRaises(MODULE.DiscoveryError) as error:
+                MODULE.discover_candidate("fake-cli", {}, Path("unused"), None, CONTRACT, None)
+            self.assertIn("Example Production", str(error.exception))
+            self.assertIn("Example API Staging", str(error.exception))
+            selected = MODULE.discover_candidate(
+                "fake-cli", {}, Path("unused"), None, CONTRACT, "production"
+            )
+        self.assertEqual(selected["item_id"], "prod")
 
     def test_authentication_failure_marks_consumer_as_not_started(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -208,31 +231,39 @@ raise SystemExit(2)
             )
             consumer = (
                 "import os; "
+                "from pathlib import Path; "
                 "assert os.environ['SERVICE_URL'] == 'https://hidden.example'; "
                 "assert os.environ['SERVICE_API_KEY'] == 'hidden-key'; "
                 "assert os.environ['SERVICE_DATABASE'] == 'hidden-db'; "
-                "print('consumer-ok')"
+                f"p = Path({str(temporary / 'count')!r}); "
+                "p.write_text(p.read_text() + 'run\\n' if p.exists() else 'run\\n'); "
+                "print('consumer-ok: historical not authenticated warning'); "
+                "raise SystemExit(int(os.environ['FAKE_CONSUMER_EXIT']))"
             )
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(SCRIPTS / "credential_provider_run.py"),
-                    "--contract",
-                    str(contract),
-                    "--",
-                    sys.executable,
-                    "-c",
-                    consumer,
-                ],
-                env=env,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout.strip(), "consumer-ok")
-            self.assertNotIn("hidden-key", result.stdout + result.stderr)
+            for invocation, exit_code in enumerate((0, 17), start=1):
+                with self.subTest(exit_code=exit_code):
+                    env["FAKE_CONSUMER_EXIT"] = str(exit_code)
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(SCRIPTS / "credential_provider_run.py"),
+                            "--contract",
+                            str(contract),
+                            "--",
+                            sys.executable,
+                            "-c",
+                            consumer,
+                        ],
+                        env=env,
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, exit_code, result.stderr)
+                    self.assertEqual((temporary / "count").read_text().splitlines(), ["run"] * invocation)
+                    self.assertIn("consumer-ok", result.stdout)
+                    self.assertNotIn("hidden-key", result.stdout + result.stderr)
 
     @unittest.skipUnless(sys.platform == "darwin", "macOS Keychain behavior")
     def test_keychain_lookup_timeout_fails_quickly(self) -> None:

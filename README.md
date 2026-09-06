@@ -14,6 +14,10 @@ supported marketplace, not the identity of the repository.
   result verification.
 - `plugins/microsoft-graph/` provides multi-account Microsoft Graph guidance
   for Outlook and Microsoft 365 through the official PowerShell SDK.
+- `plugins/github-cli/` provides terminal-first GitHub access through the
+  official GitHub CLI and Git, including multi-account device-code setup.
+- `plugins/azure-cli/` provides Azure resource management through the official
+  Azure CLI with reusable account and subscription contexts.
 - `plugins/exchange-online/` provides Exchange administration through the
   official PowerShell module with persistent device-code authentication.
 - `plugins/sharepoint-online/` routes SharePoint work through Microsoft Graph
@@ -65,6 +69,13 @@ codex plugin add exchange-online@ai-agent-plugins
 codex plugin add sharepoint-online@ai-agent-plugins
 ```
 
+Install GitHub or Azure access when needed:
+
+```bash
+codex plugin add github-cli@ai-agent-plugins
+codex plugin add azure-cli@ai-agent-plugins
+```
+
 Start a new Codex task after installing so the plugin skill is loaded.
 
 ## Microsoft Graph on a new device
@@ -72,7 +83,8 @@ Start a new Codex task after installing so the plugin skill is loaded.
 Install PowerShell 7 and the current official Microsoft Graph PowerShell
 modules (`Microsoft.Graph.Authentication` 2.37.0 or newer). Each device signs
 in to its own accounts with Microsoft's supported device-code flow and keeps
-its authentication cache locally. The plugin stores no credentials or tokens.
+its authentication cache in device-local secure storage. Plugin files contain
+no credentials or tokens.
 
 ## Exchange and SharePoint on a new device
 
@@ -109,6 +121,8 @@ codex plugin add agent-core@ai-agent-plugins
 codex plugin add microsoft-graph@ai-agent-plugins
 codex plugin add exchange-online@ai-agent-plugins
 codex plugin add sharepoint-online@ai-agent-plugins
+codex plugin add github-cli@ai-agent-plugins
+codex plugin add azure-cli@ai-agent-plugins
 ```
 
 Start a new task after updating.

@@ -17,6 +17,12 @@ SCRIPT = Path(__file__).parents[1] / "scripts" / "odoo_json2.py"
 
 class RecordingHandler(BaseHTTPRequestHandler):
     records = []
+    redirect_target = ""
+
+    def do_GET(self) -> None:
+        self.__class__.records.append({"method": "GET", "authorization": self.headers.get("Authorization")})
+        self.send_response(200)
+        self.end_headers()
 
     def do_POST(self) -> None:
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
@@ -29,6 +35,15 @@ class RecordingHandler(BaseHTTPRequestHandler):
                 "body": body,
             }
         )
+        if "/redirect_" in self.path:
+            code = int(self.path.rsplit("_", 1)[1])
+            self.send_response(code)
+            self.send_header("Location", self.redirect_target)
+            self.end_headers()
+            return
+        if self.path.endswith("/create_then_disconnect"):
+            self.close_connection = True
+            return
         if self.path.endswith("/forced_error"):
             response = b'{"message":"expected failure"}'
             self.send_response(422)
@@ -131,6 +146,40 @@ class OdooJson2TransparencyTests(unittest.TestCase):
         self.assertEqual(helper.returncode, 1)
         self.assertEqual(json.loads(helper.stdout), {"message": "expected failure"})
         self.assertIn("HTTP 422", helper.stderr)
+
+    def test_authenticated_redirects_are_never_followed(self) -> None:
+        class DestinationHandler(RecordingHandler):
+            records = []
+
+        destination = ThreadingHTTPServer(("127.0.0.1", 0), DestinationHandler)
+        thread = threading.Thread(target=destination.serve_forever, daemon=True)
+        thread.start()
+        try:
+            for target in (
+                f"http://127.0.0.1:{destination.server_port}/elsewhere",
+                f"{self.base_url}/same-origin",
+            ):
+                RecordingHandler.redirect_target = target
+                for code in (301, 302, 303, 307, 308):
+                    with self.subTest(target=target, code=code):
+                        RecordingHandler.records.clear()
+                        DestinationHandler.records.clear()
+                        helper = self.helper_request("x_custom.model", f"redirect_{code}", "{}")
+                        self.assertEqual(helper.returncode, 1)
+                        self.assertIn("redirect refused", helper.stderr)
+                        self.assertEqual(len(RecordingHandler.records), 1)
+                        self.assertEqual(DestinationHandler.records, [])
+                        self.assertNotIn("test-api-key", helper.stdout + helper.stderr)
+        finally:
+            destination.shutdown()
+            thread.join()
+            destination.server_close()
+
+    def test_uncertain_write_is_not_replayed(self) -> None:
+        helper = self.helper_request("x_custom.model", "create_then_disconnect", '{"values":{"name":"test"}}')
+        self.assertEqual(helper.returncode, 1)
+        self.assertEqual(len(RecordingHandler.records), 1)
+        self.assertNotIn("test-api-key", helper.stdout + helper.stderr)
 
 
 if __name__ == "__main__":

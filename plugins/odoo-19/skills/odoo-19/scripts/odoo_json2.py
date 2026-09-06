@@ -17,6 +17,13 @@ from typing import Optional, Sequence
 USER_AGENT = "ai-agent-plugins-odoo-json2/0.1"
 
 
+class NoAuthenticatedRedirects(urllib.request.HTTPRedirectHandler):
+    """Never forward credentials or replay a JSON-2 call through a redirect."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def json_body(body: Optional[str], body_file: Optional[str]) -> bytes:
     if body_file:
         raw = sys.stdin.read() if body_file == "-" else Path(body_file).read_text("utf-8")
@@ -67,7 +74,8 @@ def send_request(
         headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    opener = urllib.request.build_opener(NoAuthenticatedRedirects)
+    with opener.open(request, timeout=timeout) as response:
         return response.read()
 
 
@@ -118,6 +126,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             sys.stdout.buffer.write(b"\n")
         return 0
     except urllib.error.HTTPError as exc:
+        if 300 <= exc.code < 400:
+            exc.close()
+            print(
+                f"Odoo JSON-2 redirect refused (HTTP {exc.code}). Verify ODOO_URL; "
+                "credentials were not forwarded. For a write, verify its outcome before retrying.",
+                file=sys.stderr,
+            )
+            return 1
         response = exc.read()
         if response:
             sys.stdout.buffer.write(response)

@@ -7,6 +7,8 @@ Use the bundled managed entrypoint for Proton Pass CLI operations; it resolves `
 
 For routine credential use, do not run a separate session check: the managed entrypoint performs it and automatically repairs an expired session from this device's securely stored agent token. It uses macOS Keychain, Windows Credential Manager, Linux Secret Service when available, or secure host injection. Minimize round trips and resolve multiple known `pass://` field references through one managed `pass-cli run` operation when possible.
 
+For multiple Proton accounts or agents, use a distinct native credential-store selector or securely injected token for each. The wrapper binds each alternate bootstrap source to its own session directory; `PROTON_PASS_SESSION_DIR` supplies the base name. Keep each account's selector stable between tasks so its session can be reused.
+
 Keep the two lifetimes distinct: a Proton agent token may be issued for up to one year, while each CLI session created from it lasts two hours. An expired CLI session normally requires automatic reauthentication with the same current agent token, not a new token.
 
 If a device has not yet stored its agent token, or Proton rejects the stored token while creating a new CLI session, use the bundled `scripts/proton_pass_bootstrap.py store` helper with the currently issued scoped Proton Pass agent token where native secure storage is available; use the host's secure secret injection otherwise. This is device-local setup, not ordinary session reauthentication. Never move a bootstrap token or session from another computer, and do not substitute browser automation for the managed recovery flow.
@@ -16,5 +18,7 @@ When a service skill publishes a credential contract, prefer the bundled `script
 For that routine contract fast path, resolve bundled paths relative to this skill directory and run `<PYTHON_3_9_PLUS> scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>`. Use a verified Python 3.9+ runtime already supplied by the host or workspace when available; on Windows do not assume `py -3` exists or mistake a Microsoft Store execution alias for Python. Install a trusted compatible runtime only when none is available. Pass the contract directly without inspecting it first.
 
 If automatic recovery fails, distinguish a missing or Proton-rejected device agent token from an ordinary two-hour session expiry and report the wrapper's non-secret error. Do not scan other connectors, environment files, repositories, another computer, or the browser.
+
+The wrapper recovers authentication before launching a consumer and does not replay it afterward. If a consumer fails or times out after a possible write, verify the outcome before retrying; its output does not establish whether Proton or the destination service failed.
 
 Read and follow `instructions.yaml` completely before manual vault/item operations, direct CLI use, authentication setup, session-recovery diagnosis, or any workflow other than the routine credential-contract fast path above.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import os
 import re
 import shutil
@@ -72,25 +73,53 @@ def pass_cli_path() -> str:
     return resolved
 
 
-def agent_session_root() -> Path:
+def agent_session_root(injected_token: Optional[str] = None) -> Path:
     configured = os.environ.get("PROTON_PASS_SESSION_DIR")
     if configured:
-        return Path(configured).expanduser()
-
-    if sys.platform == "win32":
+        root = Path(configured).expanduser()
+    elif sys.platform == "win32":
         # TEMP is per-user on Windows and avoids sandbox access failures in
         # LocalAppData while remaining reusable across tasks on that host.
         temp_root = os.environ.get("TEMP") or tempfile.gettempdir()
-        return Path(temp_root) / "proton-pass-cli-agent"
-
-    if sys.platform == "darwin" or sys.platform.startswith("linux"):
+        root = Path(temp_root) / "proton-pass-cli-agent"
+    elif sys.platform == "darwin" or sys.platform.startswith("linux"):
         # Proton's generated agent instructions recommend an isolated temporary
         # session. The numeric user ID prevents collisions in a shared /tmp on
         # Linux while macOS normally supplies a per-user temporary directory.
         user_suffix = str(os.getuid()) if hasattr(os, "getuid") else "user"
-        return Path(tempfile.gettempdir()) / f"proton-pass-cli-agent-{user_suffix}"
+        root = Path(tempfile.gettempdir()) / f"proton-pass-cli-agent-{user_suffix}"
+    else:
+        root = Path(tempfile.gettempdir()) / "proton-pass-cli-agent"
 
-    return Path(tempfile.gettempdir()) / "proton-pass-cli-agent"
+    # Keep the existing native default session. Alternate bootstrap sources
+    # receive separate sessions, even when the host supplies a common path.
+    # A token fingerprint distinguishes injected accounts without storing the
+    # token or reading a native credential store during healthy preflights.
+    if injected_token:
+        # Validate only when authenticating, in resolve_token. Diagnostics and
+        # logout must remain usable even when the injected value is malformed.
+        identity = ("injected", injected_token)
+    elif sys.platform == "darwin":
+        selected = (
+            os.environ.get("PROTON_PASS_AGENT_KEYCHAIN_SERVICE") or GENERIC_KEYCHAIN[0],
+            os.environ.get("PROTON_PASS_AGENT_KEYCHAIN_ACCOUNT") or GENERIC_KEYCHAIN[1],
+        )
+        identity = ("keychain", *selected) if selected != GENERIC_KEYCHAIN else ()
+    elif sys.platform == "win32":
+        selected = os.environ.get("PROTON_PASS_AGENT_CREDENTIAL_TARGET", WINDOWS_CREDENTIAL_TARGET)
+        identity = ("credential-manager", selected) if selected != WINDOWS_CREDENTIAL_TARGET else ()
+    elif sys.platform.startswith("linux"):
+        selected = (
+            os.environ.get("PROTON_PASS_AGENT_SECRET_SERVICE", GENERIC_KEYCHAIN[0]),
+            os.environ.get("PROTON_PASS_AGENT_SECRET_ACCOUNT", GENERIC_KEYCHAIN[1]),
+        )
+        identity = ("secret-service", *selected) if selected != GENERIC_KEYCHAIN else ()
+    else:
+        identity = ()
+    if identity:
+        fingerprint = hashlib.sha256("\0".join(identity).encode("utf-8")).hexdigest()[:24]
+        return root.with_name(f"{root.name}-profile-{fingerprint}")
+    return root
 
 
 def prepare_environment(session_root: Path) -> dict[str, str]:
@@ -157,8 +186,33 @@ def run_capture(
 
 
 def is_auth_failure(result: subprocess.CompletedProcess[str]) -> bool:
+    if result.returncode == 0:
+        return False
     combined = f"{result.stdout}\n{result.stderr}".lower()
     return any(marker in combined for marker in AUTH_MARKERS)
+
+
+def is_token_rejection(result: subprocess.CompletedProcess[str]) -> bool:
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    return result.returncode != 0 and (
+        "personal access token is invalid, expired or has been deleted" in combined
+    )
+
+
+def can_retry_provider_command(arguments: list[str]) -> bool:
+    # `run` forwards arbitrary consumer output and exit codes. Once launched,
+    # neither proves that Proton failed before the consumer performed a write.
+    # Restrict replay to provider reads with no consumer or mutation to repeat.
+    return (
+        bool(arguments)
+        and (
+            arguments[0] == "info"
+            or (len(arguments) >= 2 and tuple(arguments[:2]) in {
+                ("vault", "list"), ("share", "list"),
+                ("item", "list"), ("item", "view"),
+            })
+        )
+    )
 
 
 def emit(result: subprocess.CompletedProcess[str]) -> None:
@@ -379,14 +433,15 @@ def recover_session(
         del token
         if login.returncode != 0:
             emit(login)
-            print(
-                "Proton rejected the device-local agent token while creating "
-                "a new two-hour CLI session. Proton's response does not "
-                "distinguish an invalid, expired, or deleted token. Verify the "
-                "currently issued agent token and store it on this device with "
-                "proton_pass_bootstrap.py.",
-                file=sys.stderr,
-            )
+            if is_token_rejection(login):
+                print(
+                    "Proton rejected the device-local agent token while creating "
+                    "a new two-hour CLI session. Proton's response does not "
+                    "distinguish an invalid, expired, or deleted token. Verify the "
+                    "currently issued agent token and store it on this device with "
+                    "proton_pass_bootstrap.py.",
+                    file=sys.stderr,
+                )
             return False
 
         verified = run_capture([pass_cli, "info"], env)
@@ -436,10 +491,11 @@ def main() -> int:
         return 2
 
     injected_token = os.environ.pop("PROTON_PASS_PERSONAL_ACCESS_TOKEN", None)
+    interactive_login = arguments[0] == "login" and "--interactive" in arguments
 
     try:
         pass_cli = pass_cli_path()
-        session_root = agent_session_root()
+        session_root = agent_session_root(None if interactive_login else injected_token)
         env = prepare_environment(session_root)
 
         if arguments[0] in SESSION_FREE_COMMANDS:
@@ -455,12 +511,12 @@ def main() -> int:
             emit(result)
             return result.returncode
         if arguments[0] == "login":
-            token = resolve_token(env, injected_token)
-            if not token and "--interactive" not in arguments:
+            token = None if interactive_login else resolve_token(env, injected_token)
+            if not token and not interactive_login:
                 print(missing_token_message(), file=sys.stderr)
                 return 1
             login_env = env.copy()
-            if token and "--interactive" not in arguments:
+            if token:
                 login_env["PROTON_PASS_PERSONAL_ACCESS_TOKEN"] = token
             result = run_capture([pass_cli, *arguments], login_env)
             login_env.pop("PROTON_PASS_PERSONAL_ACCESS_TOKEN", None)
@@ -473,7 +529,7 @@ def main() -> int:
             return 1
 
         result = run_capture([pass_cli, *arguments], env)
-        if is_auth_failure(result):
+        if can_retry_provider_command(arguments) and is_auth_failure(result):
             if not recover_session(pass_cli, env, session_root, injected_token):
                 return result.returncode or 1
             result = run_capture([pass_cli, *arguments], env)
