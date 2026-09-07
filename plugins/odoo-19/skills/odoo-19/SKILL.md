@@ -20,8 +20,9 @@ description: Use, develop, review, test, and deploy Odoo 19 systems and customiz
 - Deploy to production only after explicit user approval.
 - Before changing records, confirm the correct database and company, then verify the result.
 
-## Discuss and chatter formatting
+## Discuss and chatter messages
 
+- Before composing an Odoo chat update, read the recent messages in the intended conversation, not the whole history. Continue an ongoing exchange naturally without unnecessarily repeating greetings, introductions, sign-offs or information already shared. Keep enough context to identify the task when the topic changes. A new Codex task does not mean a new conversation with the recipient. Greet when appropriate for a fresh exchange, preserve explicitly requested wording, and keep separately requested updates separate unless the user asks to combine them.
 - For formatted chats and chatter messages, use simple HTML paragraphs, line breaks and lists (`<p>`, `<br>`, `<ul><li>`). Newlines in an HTML string do not create visible paragraph breaks; Markdown is not automatically converted. Escape variable text before inserting it into HTML, not the completed HTML body.
 - When calling `message_post` through JSON-2 as an internal user, pass `body_is_html: true` alongside the HTML `body` in the method arguments. Without it, Odoo escapes the string and may display the tags as text. For example: `"body": "<p>Hello,</p><p>First paragraph.</p><p>Second paragraph.</p>", "body_is_html": true`. In server-side Python, use `markupsafe.Markup` with escaped variable text instead; do not mark arbitrary untrusted content as safe. The web composer handles HTML differently, so do not assume its behavior applies to direct API calls.
 - Post through the intended channel or business record's `message_post`, not direct `mail.message.create` as a formatting workaround. After an authorized send, read back the returned message's `body` to check the paragraph/list structure and catch escaped tags or literal `\n` sequences. This checks stored markup, not exact visual layout. Do not send duplicate test messages or edit existing messages without authorization.
