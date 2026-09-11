@@ -1,0 +1,16 @@
+{
+  "name": "github-cli",
+  "version": "0.3.0",
+  "display_name": "GitHub CLI",
+  "skills": [
+    {
+      "name": "github-cli",
+      "description": "Use GitHub through the official GitHub CLI, Git, and SSH or HTTPS for authentication, repositories, pull requests, issues, Actions, releases, organizations, secrets, and API requests. Use for terminal-first GitHub work without a connector plugin.",
+      "frontmatter": {
+        "name": "github-cli",
+        "description": "Use GitHub through the official GitHub CLI, Git, and SSH or HTTPS for authentication, repositories, pull requests, issues, Actions, releases, organizations, secrets, and API requests. Use for terminal-first GitHub work without a connector plugin."
+      },
+      "path": "skills/github-cli/SKILL.md"
+    }
+  ]
+}

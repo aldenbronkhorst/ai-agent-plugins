@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "microsoft-graph",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multi-account Microsoft Graph access for Outlook and Microsoft 365.",
   "author": {
     "name": "AI Agent Plugins"

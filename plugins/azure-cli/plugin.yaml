@@ -1,0 +1,5 @@
+name: azure-cli
+version: 0.3.0
+description: Terminal-first Microsoft Azure resource management through the official
+  Azure CLI.
+author: AI Agent Plugins

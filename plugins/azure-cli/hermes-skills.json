@@ -1,0 +1,16 @@
+{
+  "name": "azure-cli",
+  "version": "0.3.0",
+  "display_name": "Azure CLI",
+  "skills": [
+    {
+      "name": "azure-cli",
+      "description": "Use the official Azure CLI for Azure subscriptions, resource groups, deployments, RBAC, virtual machines, storage, networking, Key Vault, App Service, Functions, AKS, and other Azure resource-management work. Use for Azure authentication and terminal-first operations; use Microsoft Graph instead for Microsoft 365 and Graph-supported identity or collaboration data.",
+      "frontmatter": {
+        "name": "azure-cli",
+        "description": "Use the official Azure CLI for Azure subscriptions, resource groups, deployments, RBAC, virtual machines, storage, networking, Key Vault, App Service, Functions, AKS, and other Azure resource-management work. Use for Azure authentication and terminal-first operations; use Microsoft Graph instead for Microsoft 365 and Graph-supported identity or collaboration data."
+      },
+      "path": "skills/azure-cli/SKILL.md"
+    }
+  ]
+}

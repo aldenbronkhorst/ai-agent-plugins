@@ -1,0 +1,4 @@
+name: odoo-19
+version: 0.3.0
+description: Odoo 19 guidance and an unrestricted JSON-2 request helper.
+author: AI Agent Plugins

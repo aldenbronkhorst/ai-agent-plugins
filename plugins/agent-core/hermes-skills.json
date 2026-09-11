@@ -1,0 +1,16 @@
+{
+  "name": "agent-core",
+  "version": "0.3.0",
+  "display_name": "Agent Core",
+  "skills": [
+    {
+      "name": "agent-core",
+      "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for questions about whether an external service can be accessed, discovery of installed credential providers, and tasks that can use direct tools instead of a graphical interface.",
+      "frontmatter": {
+        "name": "agent-core",
+        "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for questions about whether an external service can be accessed, discovery of installed credential providers, and tasks that can use direct tools instead of a graphical interface."
+      },
+      "path": "skills/agent-core/SKILL.md"
+    }
+  ]
+}

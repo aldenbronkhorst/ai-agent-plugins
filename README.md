@@ -1,41 +1,52 @@
 # AI Agent Plugins
 
-Portable plugins containing Agent Skills and their helper scripts. Install through
-an application's plugin manager to retain its Git source and update lifecycle.
+Eight plugins for **Hermes Agent, Claude Code and Codex**, sharing the same Agent
+Skills, helper scripts and icons. Each platform gets its native packaging; the
+workflow instructions and service integrations have one maintained source.
 
 ## Install in Hermes
 
-In **Capabilities → Plugins → Install from Git**, enter:
+Install the plugins you want individually. In **Capabilities → Plugins → Install
+from Git**, paste a plugin link from the table below. For example, Proton Pass:
 
 ```text
-https://github.com/aldenbronkhorst/ai-agent-plugins
+https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/proton-pass
 ```
 
-Install and enable **ai-agent-plugins**. This is one portable agent plugin with
-all eight workflows and their helper scripts. It does not add desktop UI code.
-Start a new session after installation (restart the gateway if Hermes requests it).
+Install and enable **proton-pass**, then start a new session (restart the backend
+if Hermes requests it). The installer labels the component type **Agent plugin**;
+the plugin identity underneath is `proton-pass`.
 
 The equivalent CLI command is:
 
 ```bash
-hermes plugins install aldenbronkhorst/ai-agent-plugins --enable
+hermes plugins install aldenbronkhorst/ai-agent-plugins/plugins/proton-pass --enable
 ```
 
-Hermes' Git installer inspects the selected directory for a root `plugin.json`;
-it does not import the multi-plugin Codex or Claude marketplace catalog. The
-repository therefore also ships a complete portable package at its root.
-Use the repository root in Hermes: the tested installer keeps its `.git`
-directory, which is required by the native updater. Subdirectory installs in
-that Hermes version lose the Git checkout and cannot use that updater.
+Ask for the work normally, for example **"Explain how you would use Proton Pass
+to supply credentials without displaying them"** or **"How should I connect to
+Odoo 19?"**. Enabled plugins advertise their workflow descriptions in the agent's
+session context. The agent loads the corresponding instructions with Hermes'
+native `skill_view` tool, including access to their bundled scripts/resources.
+No manual global skill copies or custom instructions are needed.
 
-Update through Hermes' plugin controls, or:
+To update an individual plugin, paste the same link into **Install from Git**,
+turn on **Force reinstall**, and keep it enabled. The equivalent native command:
 
 ```bash
-hermes plugins update ai-agent-plugins
+hermes plugins install aldenbronkhorst/ai-agent-plugins/plugins/proton-pass --force --enable
 ```
 
-This preserves native Git updates. A background automatic update schedule has
-not been verified; pushing to GitHub does not by itself make Hermes reload it.
+Hermes' current subdirectory installer records the source/revision but does not
+retain `.git`, so its **Update** action cannot pull these installations. Native
+force-reinstall fetches the current package and replaces it, including removing
+stale files. Start a new session after updating. **Individual Hermes folder
+installs do not currently provide automatic background updates.**
+
+The repository root remains an optional **single bundle** named `ai-agent-plugins`
+for existing users. It contains all eight workflows, has one enable switch, and
+retains Git for `hermes plugins update ai-agent-plugins`. It is not the eight-entry
+marketplace. Choose either the bundle or individual plugins to avoid duplicates.
 
 ## Install in Codex
 
@@ -70,16 +81,19 @@ not enable it by default. Reload plugins or start a new session when prompted.
 
 ## Included plugins
 
-| Plugin | Purpose |
+Each plugin name links to the exact directory to paste into Hermes' Git installer.
+Codex and Claude expose the same names through their native marketplace catalogs.
+
+| Plugin / Hermes install link | Purpose |
 | --- | --- |
-| `proton-pass` | Credential retrieval and session recovery using Proton Pass. |
-| `odoo-19` | Odoo 19 development, deployment, and operations. |
-| `agent-core` | Credential handling, tool selection, and result verification. |
-| `microsoft-graph` | Microsoft 365 and Entra through Microsoft Graph. |
-| `github-cli` | GitHub through the official CLI and Git. |
-| `azure-cli` | Azure subscriptions and resources through the official CLI. |
-| `exchange-online` | Exchange administration through official PowerShell tools. |
-| `sharepoint-online` | SharePoint through Graph and the official management shell. |
+| [proton-pass](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/proton-pass) | Credential retrieval and session recovery using Proton Pass. |
+| [odoo-19](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/odoo-19) | Odoo 19 development, deployment, and operations. |
+| [agent-core](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/agent-core) | Credential handling, tool selection, and result verification. |
+| [microsoft-graph](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/microsoft-graph) | Microsoft 365 and Entra through Microsoft Graph. |
+| [github-cli](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/github-cli) | GitHub through the official CLI and Git. |
+| [azure-cli](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/azure-cli) | Azure subscriptions and resources through the official CLI. |
+| [exchange-online](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/exchange-online) | Exchange administration through official PowerShell tools. |
+| [sharepoint-online](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/sharepoint-online) | SharePoint through Graph and the official management shell. |
 
 ## Source and generated packages
 
@@ -96,24 +110,51 @@ helpers and executable permissions. Copies are committed because Git installers
 need a complete package without running a build. There are no cross-package
 symlinks.
 
-The build also generates small `.codex-plugin/plugin.json` and
-`.claude-plugin/plugin.json` compatibility manifests and the Claude marketplace
-catalog. The original `.agents/plugins/marketplace.json` retains the Codex
-catalog order, availability policies, and display name. These are packaging and
-presentation metadata; the workflow instructions and helper code are shared.
+The build generates `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
+the Claude marketplace catalog, and Hermes' `plugin.yaml`, `hermes-skills.json`
+and `__init__.py`. The original `.agents/plugins/marketplace.json` retains the
+Codex catalog order, availability policies and display name.
+
+Hermes registration comes from one template, `packaging/hermes/__init__.py`.
+It registers the canonical skill files and bounded discovery context using native
+Hermes APIs. That context survives prompt rebuilds; disabling/removing a plugin
+removes its registrations on reload. The adapter does not execute helpers,
+install service runtimes, retrieve credentials, or copy skills into global folders.
+Its runtime uses Python's standard library only.
 
 After editing canonical content:
 
 ```bash
-python3 scripts/build_packages.py
-python3 scripts/build_packages.py --check
+python3 -m venv .venv
+.venv/bin/python -m pip install PyYAML==6.0.3 jsonschema==4.23.0 skills-ref==0.1.1
+.venv/bin/python scripts/build_packages.py
+.venv/bin/python scripts/validate_packages.py
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 Before releasing, bump the changed plugin's `version` in its portable
 `plugin.json` and the root bundle version, regenerate, validate, commit, and push.
 A version change allows clients with versioned caches to install the new package.
 CI rejects stale generated copies, missing helpers/icons, invalid portable
-manifests, invalid skills, and invalid Claude plugin/marketplace metadata.
+manifests, invalid skills, mismatched versions, broken registration and invalid
+Claude plugin/marketplace metadata.
+
+Run the Hermes integration test with an installed Hermes runtime and its Python:
+
+```bash
+/path/to/hermes-agent/venv/bin/python scripts/test_hermes_integration.py \
+  --hermes-source /path/to/hermes-agent
+```
+
+This uses a temporary Git repository and isolated Hermes profile. It exercises
+native installation of all eight plugins, `skill_view`, real agent prompt
+construction/rebuild, disable/re-enable, replacement updates and unload. It makes
+no model API calls and does not access service accounts. A live model invocation
+is a separate release check; manifest validation alone is not runtime validation.
+
+The packaging follows the shared-content/native-registration pattern used by
+[Superpowers](https://github.com/obra/superpowers/tree/main/.hermes-plugin) and
+the generated platform manifests in [Xberg](https://github.com/xberg-io/plugins).
 
 The [portable specification](https://agent-plugins.org/plugin-authors/build-an-agent-plugin)
 standardizes package contents. Marketplaces, icons, installation, and update

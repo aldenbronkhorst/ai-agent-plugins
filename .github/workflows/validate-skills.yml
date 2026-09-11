@@ -16,9 +16,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install the portable package validators
-        run: python -m pip install skills-ref==0.1.1 jsonschema==4.23.0
+        run: python -m pip install skills-ref==0.1.1 jsonschema==4.23.0 PyYAML==6.0.3
       - name: Validate manifests, generated packages, helpers, and icons
         run: python scripts/validate_packages.py
+      - name: Test plugin registration and package boundaries
+        run: python -m unittest discover -s tests -v
       - name: Validate all shared skills
         run: |
           for skill in plugins/*/skills/* skills/*; do

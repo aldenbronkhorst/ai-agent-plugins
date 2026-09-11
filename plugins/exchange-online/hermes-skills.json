@@ -1,0 +1,16 @@
+{
+  "name": "exchange-online",
+  "version": "0.3.0",
+  "display_name": "Exchange Online",
+  "skills": [
+    {
+      "name": "exchange-online",
+      "description": "Use the official Exchange Online PowerShell module for Exchange administration across accounts and tenants. Use for mailboxes, shared mailboxes, mailbox permissions, distribution groups, mail flow, connectors, accepted domains, Exchange settings, and Security & Compliance PowerShell; use Microsoft Graph instead for ordinary email and calendar content.",
+      "frontmatter": {
+        "name": "exchange-online",
+        "description": "Use the official Exchange Online PowerShell module for Exchange administration across accounts and tenants. Use for mailboxes, shared mailboxes, mailbox permissions, distribution groups, mail flow, connectors, accepted domains, Exchange settings, and Security & Compliance PowerShell; use Microsoft Graph instead for ordinary email and calendar content."
+      },
+      "path": "skills/exchange-online/SKILL.md"
+    }
+  ]
+}

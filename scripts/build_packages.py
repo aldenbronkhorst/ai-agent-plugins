@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import sys
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 IGNORED = {"__pycache__", ".DS_Store"}
 
@@ -30,6 +32,36 @@ def files_below(directory):
     return files
 
 
+def skill_metadata(plugin):
+    entries = []
+    for path in sorted((plugin / "skills").glob("*/SKILL.md")):
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        if not lines or lines[0] != "---" or "---" not in lines[1:]:
+            raise ValueError(f"Missing skill frontmatter: {path}")
+        metadata = yaml.safe_load("\n".join(lines[1:lines.index("---", 1)]))
+        if not isinstance(metadata, dict) or metadata.get("name") != path.parent.name or not isinstance(metadata.get("description"), str):
+            raise ValueError(f"Invalid skill metadata: {path}")
+        entries.append({"name": metadata["name"], "description": metadata["description"],
+                        "frontmatter": metadata, "path": path.relative_to(plugin).as_posix()})
+    return entries
+
+
+def hermes_outputs(package, manifest, skills):
+    """Native registration generated from the same canonical metadata and skills."""
+    interface = manifest.get("extensions", {}).get("com.openai", {}).get("interface", {})
+    native = {key: manifest[key] for key in ("name", "version", "description")}
+    native["author"] = manifest.get("author", {}).get("name", "AI Agent Plugins")
+    return {
+        package / "plugin.yaml": yaml.safe_dump(native, sort_keys=False, allow_unicode=True).encode(),
+        package / "hermes-skills.json": json_bytes({
+            "name": manifest["name"], "version": manifest["version"],
+            "display_name": interface.get("displayName", manifest["name"]), "skills": skills,
+        }),
+        package / "__init__.py": (ROOT / "packaging/hermes/__init__.py").read_bytes(),
+    }
+
+
 def build(check=False):
     # The existing catalog defines display order. Its paths/policies are retained.
     catalog = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
@@ -40,6 +72,7 @@ def build(check=False):
     outputs = {}
     modes = {}
     claude_entries = []
+    bundle_skills = []
     for name in names:
         manifest = manifests[name]
         if manifest["name"] != name:
@@ -52,6 +85,9 @@ def build(check=False):
         codex.update(skills="./skills/", interface=interface)
         outputs[plugin / ".codex-plugin/plugin.json"] = json_bytes(codex)
         outputs[plugin / ".claude-plugin/plugin.json"] = json_bytes(common)
+        indexed_skills = skill_metadata(plugin)
+        outputs.update(hermes_outputs(plugin, manifest, indexed_skills))
+        bundle_skills.extend(indexed_skills)
         claude_entries.append({"name": name, "source": f"./plugins/{name}", "description": manifest["description"]})
         skill_files = files_below(plugin / "skills")
         if Path(name, "SKILL.md") not in skill_files:
@@ -67,6 +103,9 @@ def build(check=False):
         "description": "Portable agent workflows with shared skills and helper scripts.",
         "plugins": claude_entries,
     })
+    # Retain the existing optional bundle for users who already installed it.
+    # Individual plugin links are the documented default for Hermes.
+    outputs.update(hermes_outputs(ROOT, json.loads((ROOT / "plugin.json").read_text()), bundle_skills))
     expected_skills = {path.relative_to(ROOT / "skills") for path in outputs if path.is_relative_to(ROOT / "skills")}
     stale = set(files_below(ROOT / "skills")) - expected_skills
     changed = [path for path, content in outputs.items() if not path.exists() or path.read_bytes() != content]

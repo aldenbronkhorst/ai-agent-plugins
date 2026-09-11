@@ -1,0 +1,4 @@
+name: proton-pass
+version: 0.3.0
+description: Proton Pass credential provider and secure session recovery for AI agents.
+author: AI Agent Plugins

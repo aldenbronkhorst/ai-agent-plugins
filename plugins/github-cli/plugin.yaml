@@ -1,0 +1,4 @@
+name: github-cli
+version: 0.3.0
+description: Terminal-first GitHub access through GitHub CLI and Git.
+author: AI Agent Plugins
