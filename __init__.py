@@ -25,8 +25,9 @@ def register(ctx):
     lines = [
         f"Installed workflow plugin: {metadata['display_name']}.",
         "For a matching request, load the named skill with skill_view before "
-        "working. Resolve its bundled scripts and resources relative to the "
-        "skill directory returned by skill_view.",
+        "working.",
+        f"Bundled skill directories: {root / 'skills'}/<skill-name>/. "
+        "Resolve each skill's scripts and resources relative to that directory.",
     ]
     for skill, _path in entries:
         lines.append(f"{metadata['name']}:{skill['name']} — {skill['description']}")

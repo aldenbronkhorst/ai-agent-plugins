@@ -49,6 +49,7 @@ class PackageTests(unittest.TestCase):
                 self.assertIn(f"{package.name}:{package.name}", prompt)
                 self.assertIn(description, prompt)
                 self.assertIn("skill_view", prompt)
+                self.assertIn(str(installed.resolve() / "skills"), prompt)
                 total_context += len(prompt) + 150  # Hermes section framing
         self.assertLess(total_context, 8000)
 
@@ -57,6 +58,7 @@ class PackageTests(unittest.TestCase):
         load_entrypoint(ROOT).register(ctx)
         self.assertEqual(set(ctx.skills), {p.name for p in PACKAGES})
         prompt = next(iter(ctx.sections.values()))
+        self.assertIn(str(ROOT / "skills"), prompt)
         for package in PACKAGES:
             self.assertIn(f"ai-agent-plugins:{package.name}", prompt)
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "github-cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Terminal-first GitHub access through GitHub CLI and Git.",
   "author": {
     "name": "AI Agent Plugins"
