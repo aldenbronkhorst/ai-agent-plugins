@@ -1,0 +1,16 @@
+{
+  "name": "proton-pass",
+  "version": "0.3.0",
+  "display_name": "Proton Pass",
+  "skills": [
+    {
+      "name": "proton-pass",
+      "description": "Use Proton Pass as a credential provider whenever any service needs stored login details, passwords, API keys, tokens, or other secrets, even when the user names only the destination service. Also use for Proton Pass vault or item access and pass-cli authentication recovery on macOS, Linux, or Windows.",
+      "frontmatter": {
+        "name": "proton-pass",
+        "description": "Use Proton Pass as a credential provider whenever any service needs stored login details, passwords, API keys, tokens, or other secrets, even when the user names only the destination service. Also use for Proton Pass vault or item access and pass-cli authentication recovery on macOS, Linux, or Windows."
+      },
+      "path": "skills/proton-pass/SKILL.md"
+    }
+  ]
+}

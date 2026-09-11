@@ -1,0 +1,16 @@
+{
+  "name": "sharepoint-online",
+  "version": "0.3.0",
+  "display_name": "SharePoint Online",
+  "skills": [
+    {
+      "name": "sharepoint-online",
+      "description": "Use and administer SharePoint Online across accounts and tenants with Microsoft-provided tools. Use for sites, lists, document libraries, files, permissions, sharing, OneDrive, site collections, tenant settings, and SharePoint administration; route each operation to Microsoft Graph or the SharePoint Online Management Shell according to capability and platform.",
+      "frontmatter": {
+        "name": "sharepoint-online",
+        "description": "Use and administer SharePoint Online across accounts and tenants with Microsoft-provided tools. Use for sites, lists, document libraries, files, permissions, sharing, OneDrive, site collections, tenant settings, and SharePoint administration; route each operation to Microsoft Graph or the SharePoint Online Management Shell according to capability and platform."
+      },
+      "path": "skills/sharepoint-online/SKILL.md"
+    }
+  ]
+}

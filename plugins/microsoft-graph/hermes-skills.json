@@ -1,0 +1,16 @@
+{
+  "name": "microsoft-graph",
+  "version": "0.3.0",
+  "display_name": "Microsoft Graph",
+  "skills": [
+    {
+      "name": "microsoft-graph",
+      "description": "Use Microsoft Graph across one or more Microsoft accounts for Outlook, Microsoft 365, Entra, Intune, and other Graph-supported services. Use for Graph authentication, REST requests, mail, calendars, contacts, files, Teams, tasks, users, groups, and related operations.",
+      "frontmatter": {
+        "name": "microsoft-graph",
+        "description": "Use Microsoft Graph across one or more Microsoft accounts for Outlook, Microsoft 365, Entra, Intune, and other Graph-supported services. Use for Graph authentication, REST requests, mail, calendars, contacts, files, Teams, tasks, users, groups, and related operations."
+      },
+      "path": "skills/microsoft-graph/SKILL.md"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+name: exchange-online
+version: 0.3.0
+description: Terminal-first Exchange Online administration through the official PowerShell
+  module.
+author: AI Agent Plugins
