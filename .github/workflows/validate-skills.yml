@@ -19,7 +19,7 @@ jobs:
         run: python -m pip install skills-ref==0.1.1
       - name: Validate all shared skills
         run: |
-          for skill in plugins/*/skills/*; do
+          for skill in skills/*; do
             agentskills validate "$skill"
           done
       - uses: actions/setup-node@v4
