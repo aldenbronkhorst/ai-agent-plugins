@@ -1,6 +1,6 @@
 {
   "name": "microsoft-graph",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Multi-account Microsoft Graph access for Outlook and Microsoft 365.",
   "author": {
     "name": "AI Agent Plugins"

@@ -30,6 +30,36 @@ session context. The agent loads the corresponding instructions with Hermes'
 native `skill_view` tool, including access to their bundled scripts/resources.
 No manual global skill copies or custom instructions are needed.
 
+### Select a plugin manually in Hermes
+
+Hermes does not automatically turn plugin-provided skills into `/name` commands.
+To add a manual shortcut, use its native
+[skill bundles](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills#skill-bundles) once after installing
+the plugin. For example:
+
+```bash
+hermes bundles create proton-pass --skill proton-pass:proton-pass --description "Use the Proton Pass plugin"
+hermes bundles create odoo-19 --skill odoo-19:odoo-19 --description "Use the Odoo 19 plugin"
+hermes bundles create agent-core --skill agent-core:agent-core --description "Use the Agent Core plugin"
+```
+
+Create shortcuts only for plugins you have installed. Start a new session and
+type `/proton-pass`, `/odoo-19`, or `/agent-core` in the composer, followed by
+your request. Hermes offers them in slash-command completions and loads the
+referenced skill into the conversation when invoked. The same pattern applies
+to the other plugins: `hermes bundles create NAME --skill NAME:NAME`.
+
+These shortcuts contain skill names, not copies of the instructions or helpers.
+They continue to reference the installed package after updates. Disabling or
+uninstalling a plugin prevents its shortcut from loading the skill; the shortcut
+itself remains in Hermes until removed with `hermes bundles delete NAME`.
+Existing shortcuts are not overwritten unless you explicitly pass `--force`.
+This is a separate, one-time Hermes setup step; the Git plugin installer does
+not create these shortcuts automatically. If you installed the optional root
+bundle instead, use `--skill ai-agent-plugins:NAME`.
+
+### Update in Hermes
+
 To update an individual plugin, paste the same link into **Install from Git**,
 turn on **Force reinstall**, and keep it enabled. The equivalent native command:
 
@@ -116,8 +146,9 @@ and `__init__.py`. The original `.agents/plugins/marketplace.json` retains the
 Codex catalog order, availability policies and display name.
 
 Hermes registration comes from one template, `packaging/hermes/__init__.py`.
-It registers the canonical skill files and bounded discovery context using native
-Hermes APIs. That context survives prompt rebuilds; disabling/removing a plugin
+It registers the canonical skill files and bounded discovery context, including
+their installed directory for resolving helper paths, using native Hermes APIs.
+That context survives prompt rebuilds; disabling/removing a plugin
 removes its registrations on reload. The adapter does not execute helpers,
 install service runtimes, retrieve credentials, or copy skills into global folders.
 Its runtime uses Python's standard library only.
@@ -148,7 +179,8 @@ Run the Hermes integration test with an installed Hermes runtime and its Python:
 
 This uses a temporary Git repository and isolated Hermes profile. It exercises
 native installation of all eight plugins, `skill_view`, real agent prompt
-construction/rebuild, disable/re-enable, replacement updates and unload. It makes
+construction/rebuild, native manual shortcuts through Desktop's completion and
+dispatch backend, disable/re-enable, replacement updates and unload. It makes
 no model API calls and does not access service accounts. A live model invocation
 is a separate release check; manifest validation alone is not runtime validation.
 
