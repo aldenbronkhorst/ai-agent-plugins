@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Agent Core">
+  <defs>
+    <linearGradient id="agent-core-gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#agent-core-gradient)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="9" stroke-width="4"/>
+    <path d="M32 23V13M41 32H51M32 41V51M23 32H13" stroke-width="3"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="32" cy="11" r="4"/>
+    <circle cx="53" cy="32" r="4"/>
+    <circle cx="32" cy="53" r="4"/>
+    <circle cx="11" cy="32" r="4"/>
+    <circle cx="32" cy="32" r="3"/>
+  </g>
+</svg>

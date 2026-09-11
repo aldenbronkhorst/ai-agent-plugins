@@ -1,0 +1,49 @@
+{
+  "name": "ai-agent-plugins",
+  "owner": {
+    "name": "AI Agent Plugins"
+  },
+  "description": "Portable agent workflows with shared skills and helper scripts.",
+  "plugins": [
+    {
+      "name": "proton-pass",
+      "source": "./plugins/proton-pass",
+      "description": "Proton Pass credential provider and secure session recovery for AI agents."
+    },
+    {
+      "name": "odoo-19",
+      "source": "./plugins/odoo-19",
+      "description": "Odoo 19 guidance and an unrestricted JSON-2 request helper."
+    },
+    {
+      "name": "agent-core",
+      "source": "./plugins/agent-core",
+      "description": "Foundational operating guidance for AI agents."
+    },
+    {
+      "name": "microsoft-graph",
+      "source": "./plugins/microsoft-graph",
+      "description": "Multi-account Microsoft Graph access for Outlook and Microsoft 365."
+    },
+    {
+      "name": "github-cli",
+      "source": "./plugins/github-cli",
+      "description": "Terminal-first GitHub access through GitHub CLI and Git."
+    },
+    {
+      "name": "azure-cli",
+      "source": "./plugins/azure-cli",
+      "description": "Terminal-first Microsoft Azure resource management through the official Azure CLI."
+    },
+    {
+      "name": "exchange-online",
+      "source": "./plugins/exchange-online",
+      "description": "Terminal-first Exchange Online administration through the official PowerShell module."
+    },
+    {
+      "name": "sharepoint-online",
+      "source": "./plugins/sharepoint-online",
+      "description": "Terminal-first SharePoint Online data and administration across accounts and tenants."
+    }
+  ]
+}

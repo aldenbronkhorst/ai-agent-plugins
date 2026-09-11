@@ -1,76 +1,134 @@
 # AI Agent Plugins
 
-Reusable [Agent Skills](https://agentskills.io/specification) for AI agents.
-Each capability lives in one standard `skills/<name>/` directory containing
-`SKILL.md` and its supporting scripts and references. Every compatible agent
-uses the same files and installation route.
+Portable plugins containing Agent Skills and their helper scripts. Install through
+an application's plugin manager to retain its Git source and update lifecycle.
 
-## Install
+## Install in Hermes
 
-Use the open [skills CLI](https://github.com/vercel-labs/skills) with Node.js
-and npm available:
+In **Capabilities → Plugins → Install from Git**, enter:
 
-```bash
-npx skills add aldenbronkhorst/ai-agent-plugins
+```text
+https://github.com/aldenbronkhorst/ai-agent-plugins
 ```
 
-Choose the skills, supported agents, and installation scope when prompted.
-The installer handles destination directories. Its supported agents include
-Claude Code, Hermes, Codex, Cursor, OpenCode, and others. In non-interactive
-agent environments, the installer may select the current agent automatically;
-run it interactively when choosing additional apps.
+Install and enable **ai-agent-plugins**. This is one portable agent plugin with
+all eight workflows and their helper scripts. It does not add desktop UI code.
+Start a new session after installation (restart the gateway if Hermes requests it).
 
-To inspect the available skills without installing, or select particular skills:
+The equivalent CLI command is:
 
 ```bash
-npx skills add aldenbronkhorst/ai-agent-plugins --list
-npx skills add aldenbronkhorst/ai-agent-plugins --skill agent-core github-cli
+hermes plugins install aldenbronkhorst/ai-agent-plugins --enable
 ```
 
-For another Agent Skills-compatible loader, import a **whole skill directory**
-from `skills/<name>/`, including scripts and supporting files. Copying only
-`SKILL.md` loses the helpers. Use the loader's supported import mechanism,
-then refresh its skills or start a new session.
+Hermes' Git installer inspects the selected directory for a root `plugin.json`;
+it does not import the multi-plugin Codex or Claude marketplace catalog. The
+repository therefore also ships a complete portable package at its root.
+Use the repository root in Hermes: the tested installer keeps its `.git`
+directory, which is required by the native updater. Subdirectory installs in
+that Hermes version lose the Git checkout and cannot use that updater.
 
-If you previously installed a marketplace version, remove that copy through
-your app's plugin manager and install the shared skills using the command
-above. This repository now distributes skills directly; the previous
-marketplace installation route is retired. Use one installation route per
-skill in an app to avoid loading it twice.
+Update through Hermes' plugin controls, or:
 
-## Skills
+```bash
+hermes plugins update ai-agent-plugins
+```
 
-| Skill | Capability | Runtime requirements |
-| --- | --- | --- |
-| `agent-core` | Credential handling, direct tool use, dependency setup, target verification. | Uses the tools available in the host. |
-| `github-cli` | GitHub repositories, issues, pull requests, Actions, and accounts. | GitHub CLI (`gh`) and Git. |
-| `azure-cli` | Azure resource management with account and subscription contexts. | Azure CLI (`az`). |
-| `microsoft-graph` | Microsoft 365, Outlook, Entra, Intune, and other Graph services. | PowerShell 7.2+ and Microsoft Graph PowerShell. |
-| `exchange-online` | Exchange administration and persistent device-code authentication. | PowerShell 7, ExchangeOnlineManagement, and Azure CLI. |
-| `sharepoint-online` | SharePoint and OneDrive operations and administration. | Microsoft Graph; Windows and Microsoft's SharePoint management module for operations requiring that shell. |
-| `odoo-19` | Odoo development, deployment, and external API operations. | Python 3.9+ for the bundled API helper. |
-| `proton-pass` | Credential access and automatic CLI session recovery. | Python 3.9+, Proton Pass CLI, and device-local secure authentication. |
+This preserves native Git updates. A background automatic update schedule has
+not been verified; pushing to GitHub does not by itself make Hermes reload it.
 
-The shared format makes instructions discoverable and reusable. The host
-still needs command execution, access to the installed resources, and access
-to the relevant service. CLI dependencies and authentication are separate
-from skill installation; a chat-only app cannot execute the helpers.
+## Install in Codex
 
-## Device setup
+Add this repository using the app's **Add marketplace** function, or:
 
-Authentication remains local to each device. Skill files contain no
-credentials or tokens. Microsoft-service skills treat multiple accounts and
-tenants as a baseline: the agent selects and verifies the intended identity
-instead of relying on the most recently authenticated session.
+```bash
+codex plugin marketplace add aldenbronkhorst/ai-agent-plugins
+codex plugin add proton-pass@ai-agent-plugins
+```
 
-### Microsoft Graph
+The marketplace offers the eight plugins individually, with their original
+icons. Replace `proton-pass` with another name from the table below. Start a new
+task after installation. To refresh and apply an update:
+
+```bash
+codex plugin marketplace upgrade ai-agent-plugins
+codex plugin add proton-pass@ai-agent-plugins
+```
+
+## Install in Claude Code
+
+Use the native plugin marketplace:
+
+```text
+/plugin marketplace add aldenbronkhorst/ai-agent-plugins
+/plugin install proton-pass@ai-agent-plugins
+```
+
+To enable automatic marketplace updates, open `/plugin`, choose **Marketplaces**,
+select **ai-agent-plugins**, and enable auto-update. Third-party marketplaces do
+not enable it by default. Reload plugins or start a new session when prompted.
+
+## Included plugins
+
+| Plugin | Purpose |
+| --- | --- |
+| `proton-pass` | Credential retrieval and session recovery using Proton Pass. |
+| `odoo-19` | Odoo 19 development, deployment, and operations. |
+| `agent-core` | Credential handling, tool selection, and result verification. |
+| `microsoft-graph` | Microsoft 365 and Entra through Microsoft Graph. |
+| `github-cli` | GitHub through the official CLI and Git. |
+| `azure-cli` | Azure subscriptions and resources through the official CLI. |
+| `exchange-online` | Exchange administration through official PowerShell tools. |
+| `sharepoint-online` | SharePoint through Graph and the official management shell. |
+
+## Source and generated packages
+
+Author each plugin in `plugins/<name>/`:
+
+- `plugin.json`: [Agent Plugins v1](https://agent-plugins.org/plugin-authors/manifest)
+  manifest and optional namespaced presentation metadata.
+- `skills/<name>/`: canonical skill instructions, scripts, tests, and resources.
+- `assets/`: plugin icons.
+
+The root `plugin.json` identifies the all-in-one portable package. Its `skills/`
+directory is a generated copy of the individual plugins' skills, including all
+helpers and executable permissions. Copies are committed because Git installers
+need a complete package without running a build. There are no cross-package
+symlinks.
+
+The build also generates small `.codex-plugin/plugin.json` and
+`.claude-plugin/plugin.json` compatibility manifests and the Claude marketplace
+catalog. The original `.agents/plugins/marketplace.json` retains the Codex
+catalog order, availability policies, and display name. These are packaging and
+presentation metadata; the workflow instructions and helper code are shared.
+
+After editing canonical content:
+
+```bash
+python3 scripts/build_packages.py
+python3 scripts/build_packages.py --check
+```
+
+Before releasing, bump the changed plugin's `version` in its portable
+`plugin.json` and the root bundle version, regenerate, validate, commit, and push.
+A version change allows clients with versioned caches to install the new package.
+CI rejects stale generated copies, missing helpers/icons, invalid portable
+manifests, invalid skills, and invalid Claude plugin/marketplace metadata.
+
+The [portable specification](https://agent-plugins.org/plugin-authors/build-an-agent-plugin)
+standardizes package contents. Marketplaces, icons, installation, and update
+scheduling remain client features. Runtime availability and service login are
+still device-specific.
+
+## Microsoft Graph on a new device
 
 Install PowerShell 7 and the current official Microsoft Graph PowerShell
 modules (`Microsoft.Graph.Authentication` 2.37.0 or newer). Each device signs
 in to its own accounts with Microsoft's supported device-code flow and keeps
-its authentication cache in device-local secure storage.
+its authentication cache in device-local secure storage. Plugin files contain
+no credentials or tokens.
 
-### Exchange and SharePoint
+## Exchange and SharePoint on a new device
 
 Exchange uses Azure CLI's device-code login as a persistent identity broker,
 then passes a short-lived token in memory to the official Exchange module. No
@@ -79,51 +137,12 @@ uses Microsoft's SharePoint Online Management Shell for administration that
 Graph does not expose. Graph provides persistent device-code authentication;
 the official SharePoint shell uses its supported system-browser login instead.
 
-### Proton Pass
+## Proton Pass on a new device
 
 Install `pass-cli` using the [official installation instructions](https://protonpass.github.io/pass-cli/get-started/installation/)
 for macOS, Linux, or Windows. The wrapper maintains an isolated agent session,
 checks it before every command, and performs one verified recovery when
-authentication expires. For unattended recovery, use native secure storage
-on the device or inject a minimally scoped Personal Access Token through
-`PROTON_PASS_PERSONAL_ACCESS_TOKEN`. The bundled bootstrap helper supports
-macOS Keychain, Windows Credential Manager, and Linux Secret Service.
-
-## Maintain the shared skills
-
-- Keep instructions in standard `SKILL.md` files with `name` and `description`
-  frontmatter. Use the [Agent Skills specification](https://agentskills.io/specification)
-  for optional fields.
-- Keep scripts and references inside their skill directory, and resolve their
-  paths relative to that directory. Do not depend on an app's cache layout or
-  the user's current working directory.
-- Use ordinary CLIs, service APIs, and portable runtimes. Describe real runtime
-  requirements without adding AI-app-specific tool names, manifests, hooks,
-  prompts, adapters, or configuration files.
-- Keep authentication device-local and outside the skill. Resolve companion
-  skills by their capability/name through the host's discovery mechanism.
-
-Validate the shared format and installer discovery before publishing. In an
-activated Python environment:
-
-```bash
-python -m pip install skills-ref==0.1.1
-agentskills validate skills/proton-pass
-npx skills add . --list
-```
-
-The GitHub workflow validates every skill with the Agent Skills reference
-validator and checks discovery with the general installer. These checks cover
-format and packaging; they do not claim every workflow was tested in every app.
-
-## Updates
-
-Edit the shared skill once, validate it, then commit and push the change.
-Users who installed through the general installer can check and apply updates:
-
-```bash
-npx skills check
-npx skills update
-```
-
-Refresh the host's skills or start a new session after updating.
+authentication expires. For unattended recovery, inject a minimally scoped
+Personal Access Token through `PROTON_PASS_PERSONAL_ACCESS_TOKEN`. On macOS,
+the wrapper can instead read its generic Keychain entry and can migrate the
+former local Codex entry. The plugin never stores the token in its files.

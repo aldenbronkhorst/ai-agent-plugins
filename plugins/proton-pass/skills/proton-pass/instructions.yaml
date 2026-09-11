@@ -1,0 +1,124 @@
+instructions:
+  prerequisites:
+    - "Python 3.9 or newer."
+    - "Proton Pass CLI installed and available as pass-cli or through PROTON_PASS_CLI_PATH."
+    - "Supported by Proton Pass CLI: macOS, Linux, and Windows."
+
+  python_runtime:
+    executable: "Use a verified Python 3.9+ executable for all bundled scripts."
+    general:
+      - "Prefer a compatible runtime already supplied by the host, workspace, or project."
+      - "If none is available, install a trusted compatible runtime through the platform's normal package manager or an isolated environment, verify it, and continue rather than switching to an inferior workflow."
+    windows:
+      - "Do not assume py -3 exists. Prefer a compatible Python runtime already supplied by the host or workspace, then verify py -3, python3, or python."
+      - "Do not treat a Microsoft Store execution alias as a usable Python runtime."
+      - "Install a trusted compatible Python only when no supplied or installed runtime is available."
+
+  cli:
+    unix_entrypoint: "python3 scripts/pass_cli_agent.py <pass-cli arguments>"
+    windows_entrypoint: "<PYTHON_3_9_PLUS> scripts/pass_cli_agent.py <pass-cli arguments>"
+    installation_check: "Use the managed entrypoint for the requested command; it resolves PROTON_PASS_CLI_PATH before PATH."
+    documentation: "https://protonpass.github.io/pass-cli/"
+    rules:
+      - "Use the managed entrypoint for every pass-cli command."
+      - "Treat the managed entrypoint as the authoritative availability check; do not conclude that the CLI is missing merely because pass-cli is absent from PATH."
+      - "Before installing or reinstalling the CLI, run the managed entrypoint and read its complete non-secret error."
+      - "Read the complete command output and exit code before retrying a failure."
+
+  session:
+    health_check: "pass-cli info"
+    lifetimes:
+      - "A Proton agent token may be issued for up to one year; each CLI session created from it lasts two hours. Do not confuse the two lifetimes."
+      - "An expired CLI session normally reauthenticates automatically with the same current agent token."
+    session_directory:
+      - "Use PROTON_PASS_SESSION_DIR as the session base name when the host provides it. The default native credential source keeps that path; alternate native-store selectors and injected tokens add a stable profile suffix."
+      - "Otherwise use the wrapper's dedicated per-user temporary agent session directory on macOS, Linux, or Windows."
+      - "On macOS, use a dedicated temporary agent session as Proton's generated agent instructions recommend. Do not reuse the user's normal CLI session or a legacy agent session."
+      - "On Windows, use the per-user temporary directory so clean agent tasks do not need host access to LocalAppData merely to open the agent session."
+      - "On Linux, include the numeric user ID in the temporary session name so users do not collide in a shared temporary directory."
+      - "Select a separate native-store account/target for each Proton account or agent: PROTON_PASS_AGENT_KEYCHAIN_SERVICE and PROTON_PASS_AGENT_KEYCHAIN_ACCOUNT on macOS, PROTON_PASS_AGENT_CREDENTIAL_TARGET on Windows, or PROTON_PASS_AGENT_SECRET_SERVICE and PROTON_PASS_AGENT_SECRET_ACCOUNT on Linux. Bootstrap storage and recovery use the same selector."
+      - "Securely injected tokens receive distinct session paths using a one-way token fingerprint; token values are never written to the path. Keep the session base and native-store selectors stable to reuse each account's session."
+    concurrency:
+      - "Use the wrapper's cross-platform authentication lock so concurrent agents do not race during login."
+    before_every_command:
+      - "The managed wrapper runs the health check automatically before the requested command."
+      - "Do not invoke a separate health check unless diagnosing a wrapper failure."
+      - "Continue when it succeeds with exit code 0."
+      - "Re-authenticate only for an authentication error or missing session."
+    reauthentication:
+      - "The wrapper performs ordinary expired-session recovery automatically on the same device."
+      - "Do not use another computer's session or bootstrap token to repair this device."
+      - "Allow login and logout to run without an authenticated-session preflight so they can repair authentication."
+      - "Run pass-cli logout --force to clear a stale session."
+      - "Prefer PROTON_PASS_PERSONAL_ACCESS_TOKEN when the host injects it."
+      - "On macOS, otherwise read Keychain service proton-pass-agent-bootstrap and account default."
+      - "On Windows, otherwise read target proton-pass-agent-bootstrap from Windows Credential Manager."
+      - "On Linux desktops, otherwise read service proton-pass-agent-bootstrap and account default from Secret Service when secret-tool is available; on headless Linux use the host's secure secret injection."
+      - "Provide the token only to pass-cli login and remove it before the requested command runs."
+      - "When no token is available, report that device-local bootstrap is required and use scripts/proton_pass_bootstrap.py store with a newly issued scoped Proton Pass agent token. Do not default to browser automation."
+      - "Run pass-cli info and require exit code 0 before continuing."
+      - "Retry a failed provider read once when its error indicates authentication failure. Never replay a consumer or mutation based on its output or exit code."
+      - "If Proton rejects the stored agent token while creating a new session, report the exact grouped condition without inferring that it expired: Proton does not distinguish invalid, expired, or deleted in this response. The currently issued agent token must be verified and stored on this device; repeated session retries cannot repair a rejected token."
+      - "Network, permission, and other login errors do not prove that the bootstrap token was rejected. Report the actual non-secret failure without asking for token replacement."
+    token_safety:
+      - "Use a minimally scoped, expiring Personal Access Token for automation."
+      - "Never place a token in this repository, a command argument, logs, chat output, or a plaintext file."
+      - "Use the agent host's secret injection on any platform, macOS Keychain, Windows Credential Manager, or Linux Secret Service for unattended recovery."
+      - "Use the bundled bootstrap helper to store the token in native secure storage without placing it in argv, logs, chat, or a plaintext file."
+      - "Never pass a token with pass-cli login --personal-access-token because process arguments may be visible to other processes."
+
+  discovery:
+    commands:
+      - "pass-cli vault list --output json"
+      - "pass-cli share list --output json"
+      - "pass-cli item list --vault-name <VAULT_NAME> --output json"
+    rules:
+      - "Use --output json for programmatic parsing."
+      - "Skip discovery when the required pass:// item or field reference is already known."
+      - "When discovery is required, list vaults once, then list only the likely vault; do not call item list without a vault unless a default vault is configured."
+      - "Ignore trashed items. When names collide, select the active item by Share ID and Item ID, then reuse that non-secret reference for the rest of the task."
+      - "Confirm that the required vault or item is visible; otherwise report the complete non-secret error."
+
+  credential_contracts:
+    unix_entrypoint: "python3 scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
+    windows_entrypoint: "<PYTHON_3_9_PLUS> scripts/credential_provider_run.py --contract <CONTRACT_JSON> [--target <NON_SECRET_HINT>] -- <CONSUMER_COMMAND>"
+    rules:
+      - "Use this fast path when a service skill supplies a compatible credential contract and direct credential-backed execution is suitable."
+      - "The runner performs its own managed session check, searches active items, ignores trashed items, inspects candidate field names internally, and injects all matched fields through one masked pass-cli run operation."
+      - "Pass a known contract path directly to the runner; do not open or inspect the contract first during routine use because the runner validates it."
+      - "Do not run vault-list, item-list, item-view, or help commands before the contract runner merely to reconstruct the same operation."
+      - "Pass --target only when the request or established context identifies a non-secret environment or account hint such as production or staging."
+      - "Require exactly one complete active item after service and requested-target filtering. If several remain, report the runner's non-secret candidate list; title wording such as API does not establish the intended account."
+      - "If the runner reports that automatic authentication recovery failed and the consumer was not launched, report whether device bootstrap is missing or the stored agent token was rejected. Stop instead of scanning connectors, environment files, repositories, another computer, or the browser."
+
+  item_access:
+    required_environment:
+      name: "PROTON_PASS_AGENT_REASON"
+      value: "A brief, specific description of why the item or field is needed."
+    commands:
+      - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE>"
+      - "pass-cli item view --vault-name <VAULT_NAME> --item-title <ITEM_TITLE> --field <FIELD_NAME>"
+      - "pass-cli item view pass://<SHARE_ID>/<ITEM_ID>"
+      - "pass-cli run -- <COMMAND>"
+    reason_required_for:
+      - "item view"
+      - "item create"
+      - "item update"
+      - "item trash"
+      - "item untrash"
+      - "vault update"
+    rules:
+      - "Retrieve only the item or field required for the task."
+      - "Prefer direct pass:// references using Share ID and Item ID when names are ambiguous."
+      - "When one command needs multiple fields, assign each environment variable its pass:// field reference and execute the consumer once with pass-cli run; keep output masking enabled."
+      - "Do not inspect the complete item merely to rediscover field names already known for the operation."
+      - "Never print, paste, return, or persist secret field values."
+
+  recovery:
+    authentication_failure:
+      - "Let the managed wrapper recover the session before execution and retry eligible provider reads once. Consumer commands and mutations are not automatically replayed."
+      - "If recovery still fails, report the complete non-secret error and stop."
+    other_failure:
+      - "Do not re-authenticate for permission, network, or invalid-command errors."
+      - "Report the complete non-secret error and stop when a safe correction is not available."
+      - "After a consumer failure or timeout with a possible external write, verify its outcome before retrying through this or another client."

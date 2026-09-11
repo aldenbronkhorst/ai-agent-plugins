@@ -1,0 +1,10 @@
+{
+  "name": "sharepoint-online",
+  "version": "0.2.0",
+  "description": "Terminal-first SharePoint Online data and administration across accounts and tenants.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "homepage": "https://github.com/aldenbronkhorst/ai-agent-plugins",
+  "repository": "https://github.com/aldenbronkhorst/ai-agent-plugins"
+}
