@@ -1,0 +1,35 @@
+name: Validate Plugins
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the portable package validators
+        run: python -m pip install skills-ref==0.1.1 jsonschema==4.23.0
+      - name: Validate manifests, generated packages, helpers, and icons
+        run: python scripts/validate_packages.py
+      - name: Validate all shared skills
+        run: |
+          for skill in plugins/*/skills/* skills/*; do
+            agentskills validate "$skill"
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate the Claude marketplace and all individual plugins
+        run: |
+          npx --yes @anthropic-ai/claude-code@2.1.269 plugin validate .
+          for plugin in plugins/*; do
+            npx --yes @anthropic-ai/claude-code@2.1.269 plugin validate "$plugin"
+          done

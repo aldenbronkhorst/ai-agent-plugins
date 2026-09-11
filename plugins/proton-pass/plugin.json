@@ -1,0 +1,34 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "proton-pass",
+  "version": "0.2.0",
+  "description": "Proton Pass credential provider and secure session recovery for AI agents.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "homepage": "https://github.com/aldenbronkhorst/ai-agent-plugins",
+  "repository": "https://github.com/aldenbronkhorst/ai-agent-plugins",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Proton Pass",
+        "shortDescription": "Use Proton Pass as an agent credential provider.",
+        "longDescription": "Portable Proton Pass credential-provider guidance, public service-contract discovery, and Python standard-library wrappers for safe credential injection and session recovery on macOS, Linux, and Windows.",
+        "developerName": "AI Agent Plugins",
+        "category": "Productivity",
+        "capabilities": [
+          "Credential provider for external services",
+          "Automatic active-item discovery from public service contracts",
+          "Safe Proton Pass CLI access",
+          "Automatic PAT session recovery",
+          "Secret-output safeguards"
+        ],
+        "defaultPrompt": "Use Proton Pass to retrieve the required credential without displaying or persisting it.",
+        "websiteURL": "https://proton.me/pass",
+        "brandColor": "#6D4AFF",
+        "composerIcon": "./assets/logo.svg",
+        "logo": "./assets/logo.svg"
+      }
+    }
+  }
+}

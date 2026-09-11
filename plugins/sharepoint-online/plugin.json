@@ -1,0 +1,35 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sharepoint-online",
+  "version": "0.2.0",
+  "description": "Terminal-first SharePoint Online data and administration across accounts and tenants.",
+  "author": {
+    "name": "AI Agent Plugins"
+  },
+  "homepage": "https://github.com/aldenbronkhorst/ai-agent-plugins",
+  "repository": "https://github.com/aldenbronkhorst/ai-agent-plugins",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "SharePoint Online",
+        "shortDescription": "Use and administer SharePoint Online.",
+        "longDescription": "Portable SharePoint sites, lists, libraries, permissions, sharing, OneDrive, and administration guidance using Microsoft Graph and the official SharePoint Online Management Shell.",
+        "developerName": "AI Agent Plugins",
+        "category": "Productivity",
+        "capabilities": [
+          "SharePoint sites, lists, libraries, and files",
+          "Microsoft Graph device-code authentication",
+          "Official SharePoint Online Management Shell",
+          "Permissions, sharing, and site administration",
+          "Tenant and site-collection settings",
+          "Multi-account and multi-tenant operation"
+        ],
+        "defaultPrompt": "Use the suitable structured SharePoint interface with the intended account, tenant, and site.",
+        "websiteURL": "https://learn.microsoft.com/powershell/sharepoint/sharepoint-online/introduction-sharepoint-online-management-shell",
+        "brandColor": "#038387",
+        "composerIcon": "./assets/logo.svg",
+        "logo": "./assets/logo.svg"
+      }
+    }
+  }
+}
