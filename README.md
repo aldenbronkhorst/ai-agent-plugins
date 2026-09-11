@@ -1,7 +1,59 @@
 # AI Agent Plugins
 
-Reusable collection of plugins for AI coding agents. Codex is the first
-supported marketplace, not the identity of the repository.
+Reusable [Agent Skills](https://agentskills.io/specification) for AI agents.
+Each capability is one standard `SKILL.md` folder with its supporting scripts
+and references. The same files are used by every compatible agent; there are
+no separate implementations, prompts, or adapters for individual AI apps.
+
+## Install with the general skills installer
+
+Use the open [skills CLI](https://github.com/vercel-labs/skills) with Node.js
+and npm available:
+
+```bash
+npx skills add aldenbronkhorst/ai-agent-plugins
+```
+
+Choose the skills, supported agents, and installation scope when prompted.
+The installer handles the destination directories; this repository does not
+maintain application-specific path mappings. Its supported agents include
+Claude Code, Hermes, Codex, Cursor, OpenCode, and others. In non-interactive
+agent environments, the installer may select the current agent automatically;
+run it interactively when choosing additional apps.
+
+To inspect the available skills without installing, or select particular skills:
+
+```bash
+npx skills add aldenbronkhorst/ai-agent-plugins --list
+npx skills add aldenbronkhorst/ai-agent-plugins --skill agent-core github-cli
+```
+
+For another Agent Skills-compatible loader, import a **whole skill directory**
+from `plugins/<name>/skills/<name>/`, including scripts and supporting files.
+Copying only `SKILL.md` loses the helpers. Use that app's supported import or
+skill-directory mechanism, then refresh its skills or start a new session.
+
+### What compatibility means
+
+The shared format makes the instructions discoverable and reusable. The host
+still needs permission to run commands, read the installed skill resources,
+and reach the relevant service. Installing a skill does not install its CLI
+dependencies, transfer credentials, grant permissions, or bypass a host's
+sandbox. A chat-only app without local tool execution cannot run these helpers.
+
+| Capability | Runtime and service requirements |
+| --- | --- |
+| Agent Core | Uses the tools available in the host. |
+| GitHub | GitHub CLI (`gh`) and Git. |
+| Azure | Azure CLI (`az`). |
+| Microsoft Graph | PowerShell 7.2+ and Microsoft Graph PowerShell. |
+| Exchange Online | PowerShell 7, ExchangeOnlineManagement, and Azure CLI. |
+| SharePoint Online | Microsoft Graph; Windows and Microsoft's SharePoint management module for operations requiring that shell. |
+| Odoo 19 | Python 3.9+ for the bundled API helper and access to the intended Odoo service. |
+| Proton Pass | Python 3.9+, Proton Pass CLI, and device-local secure authentication. |
+
+Use one installation route per skill in an app to avoid loading it twice.
+Existing Codex marketplace installations can continue using the wrapper below.
 
 ## Layout
 
@@ -22,15 +74,16 @@ supported marketplace, not the identity of the repository.
   official PowerShell module with persistent device-code authentication.
 - `plugins/sharepoint-online/` routes SharePoint work through Microsoft Graph
   or the official management shell according to capability.
-- Future adapters for other AI agents can be added without renaming the
-  repository.
+- Each `plugins/<name>/skills/<name>/` directory is the portable source of
+  truth. The existing `.codex-plugin/` and `.agents/plugins/` files are optional
+  marketplace packaging outside the shared skills.
 
 Microsoft-service plugins treat multiple accounts and tenants as a baseline:
 the agent selects and verifies the intended identity instead of relying on the
 most recently authenticated session. Authentication remains local to each
 device.
 
-## Install in Codex
+## Existing Codex marketplace installation
 
 Add the GitHub-backed marketplace:
 
@@ -105,13 +158,46 @@ Personal Access Token through `PROTON_PASS_PERSONAL_ACCESS_TOKEN`. On macOS,
 the wrapper can instead read its generic Keychain entry and can migrate the
 former local Codex entry. The plugin never stores the token in its files.
 
-## Publish a plugin update
+## Maintain the shared skills
 
-Before committing plugin changes, update that plugin's `version` in its
-`.codex-plugin/plugin.json`. A new version prevents Codex from reusing an older
-cached installation. Then commit and push the change.
+- Keep instructions in standard `SKILL.md` files with `name` and `description`
+  frontmatter. Use the [Agent Skills specification](https://agentskills.io/specification)
+  for optional fields.
+- Keep scripts and references inside their skill directory, and resolve their
+  paths relative to that directory. Do not depend on an app's cache layout or
+  the user's current working directory.
+- Use ordinary CLIs, service APIs, and portable runtimes. Describe real runtime
+  requirements without adding AI-app-specific tool names, hooks, prompts, or
+  configuration files to shared skills.
+- Keep authentication device-local and outside the skill. Resolve companion
+  skills by their capability/name through the host's discovery mechanism.
 
-## Update a device
+Validate the shared format and installer discovery before publishing:
+
+```bash
+python -m pip install skills-ref==0.1.1
+agentskills validate plugins/proton-pass/skills/proton-pass
+npx skills add . --list
+```
+
+The GitHub workflow validates every skill with the Agent Skills reference
+validator and checks discovery with the general installer. These checks cover
+format and packaging; they do not claim every workflow was tested in every app.
+
+### Publish updates
+
+Edit the shared skill once. For the existing Codex wrapper, also refresh the
+changed plugin's version in `.codex-plugin/plugin.json` so installed copies
+do not reuse the older cache. Then commit and push the change.
+
+Users who installed through the general installer can check and apply updates:
+
+```bash
+npx skills check
+npx skills update
+```
+
+### Update an existing Codex marketplace installation
 
 ```bash
 codex plugin marketplace upgrade ai-agent-plugins

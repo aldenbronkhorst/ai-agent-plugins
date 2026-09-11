@@ -22,6 +22,6 @@ description: Use and administer SharePoint Online across accounts and tenants wi
 
 ## Operations
 
-- Let Codex choose suitable commands or requests; this skill is guidance, not an operation allowlist. Use stable Graph endpoints by default, follow pagination when complete results are required, and use focused structured output.
+- Let the agent choose suitable commands or requests; this skill is guidance, not an operation allowlist. Use stable Graph endpoints by default, follow pagination when complete results are required, and use focused structured output.
 - Confirm the account, tenant, site, library or list, target object, and requested effect before mutations. Inspect current permissions, sharing, retention, locks, quotas, or other governing state when relevant, then verify the observable result without blindly repeating an uncertain mutation.
 - Use Microsoft Graph for Microsoft 365 groups, users, and other directory data unless the requested SharePoint operation specifically requires the SharePoint Online Management Shell. Use Exchange Online, Teams, or Azure tooling for administration owned by those services rather than stretching SharePoint tooling beyond its scope.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Proton Pass"
-  short_description: "Use stored credentials with automatic recovery"
-  default_prompt: "Use $proton-pass to access the required stored credentials without displaying them."
