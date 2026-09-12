@@ -1,5 +1,5 @@
 name: ai-agent-plugins
-version: 0.3.2
+version: 0.3.3
 description: 'Eight agent workflows: Proton Pass, Odoo 19, agent operating guidance,
   Microsoft Graph, GitHub, Azure, Exchange, and SharePoint. Includes their helper
   scripts.'
