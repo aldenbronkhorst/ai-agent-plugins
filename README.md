@@ -13,8 +13,8 @@ from Git**, paste a plugin link from the table below. For example, Proton Pass:
 https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/proton-pass
 ```
 
-Install and enable **proton-pass**, then start a new session (restart the backend
-if Hermes requests it). The installer labels the component type **Agent plugin**;
+Install and enable **proton-pass**, then restart Hermes Desktop and start a new
+session. For the CLI, exit and start Hermes again. The installer labels the component type **Agent plugin**;
 the plugin identity underneath is `proton-pass`.
 
 The equivalent CLI command is:
@@ -43,11 +43,15 @@ hermes bundles create odoo-19 --skill odoo-19:odoo-19 --description "Use the Odo
 hermes bundles create agent-core --skill agent-core:agent-core --description "Use the Agent Core plugin"
 ```
 
-Create shortcuts only for plugins you have installed. Start a new session and
-type `/proton-pass`, `/odoo-19`, or `/agent-core` in the composer, followed by
+Create shortcuts only for plugins you have installed. After the restart, start a new session and
+type `/proton-pass`, `/odoo-19`, or `/agent-core` at the beginning of the composer, followed by
 your request. Hermes offers them in slash-command completions and loads the
 referenced skill into the conversation when invoked. The same pattern applies
 to the other plugins: `hermes bundles create NAME --skill NAME:NAME`.
+
+For example: `/odoo-19 Check Production access using Proton Pass`. A slash name
+typed inside an ordinary sentence is not the same as invoking the command at
+the start. Natural requests still work when the plugin context has loaded.
 
 These shortcuts contain skill names, not copies of the instructions or helpers.
 They continue to reference the installed package after updates. Disabling or
@@ -70,8 +74,30 @@ hermes plugins install aldenbronkhorst/ai-agent-plugins/plugins/proton-pass --fo
 Hermes' current subdirectory installer records the source/revision but does not
 retain `.git`, so its **Update** action cannot pull these installations. Native
 force-reinstall fetches the current package and replaces it, including removing
-stale files. Start a new session after updating. **Individual Hermes folder
+stale files. Restart Hermes Desktop after updating, then start a new session. **Individual Hermes folder
 installs do not currently provide automatic background updates.**
+
+### Diagnose a missing workflow
+
+An enabled row in **Capabilities → Plugins** confirms the on-disk installation;
+it does not prove a running agent loaded it. Hermes caches plugin discovery in
+the backend process. **Rescan** refreshes the catalog, and opening a new chat can
+reuse that process with its old registrations. Restart the app after installing,
+enabling, or updating plugins, then use a fresh chat. Existing conversations can
+retain their earlier system prompt even after restarting.
+
+In that fresh chat, ask Hermes to list plugin skills with `skills_list`. Installed
+individual packages should appear as `odoo-19:odoo-19`,
+`proton-pass:proton-pass`, and `agent-core:agent-core` (for whichever you installed).
+Old `agent-plugin-...` names belong to the earlier portable packaging and must
+not be reused for the current native packages.
+
+For a read-only Odoo check, identify the environment in the request, for example
+"Check Production Odoo access using Proton Pass." If both Production and Staging
+credential items exist and no target was given, the credential runner reports
+the ambiguity and waits for a target. That is expected selection behavior, not
+an authentication failure. A successful check returns `res.users/context_get`;
+no Odoo records need to be changed.
 
 The repository root remains an optional **single bundle** named `ai-agent-plugins`
 for existing users. It contains all eight workflows, has one enable switch, and

@@ -88,6 +88,7 @@ instructions:
       - "Pass a known contract path directly to the runner; do not open or inspect the contract first during routine use because the runner validates it."
       - "Do not run vault-list, item-list, item-view, or help commands before the contract runner merely to reconstruct the same operation."
       - "Pass --target only when the request or established context identifies a non-secret environment or account hint such as production or staging."
+      - "When the user has supplied that target, include --target on the first runner call. If it was omitted and the runner reports ambiguity, retry with the already-specified target instead of asking the same question again. Never infer Production merely because it exists."
       - "Require exactly one complete active item after service and requested-target filtering. If several remain, report the runner's non-secret candidate list; title wording such as API does not establish the intended account."
       - "If the runner reports that automatic authentication recovery failed and the consumer was not launched, report whether device bootstrap is missing or the stored agent token was rejected. Stop instead of scanning connectors, environment files, repositories, another computer, or the browser."
 
