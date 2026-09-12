@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "ai-agent-plugins",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Eight agent workflows: Proton Pass, Odoo 19, agent operating guidance, Microsoft Graph, GitHub, Azure, Exchange, and SharePoint. Includes their helper scripts.",
   "author": {
     "name": "AI Agent Plugins"
