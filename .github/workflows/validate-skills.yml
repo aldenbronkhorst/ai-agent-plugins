@@ -21,6 +21,8 @@ jobs:
         run: python scripts/validate_packages.py
       - name: Test plugin registration and package boundaries
         run: python -m unittest discover -s tests -v
+      - name: Test Odoo JSON-2 transport
+        run: python -m unittest discover -s plugins/odoo-19/skills/odoo-19/tests -v
       - name: Validate all shared skills
         run: |
           for skill in plugins/*/skills/* skills/*; do
