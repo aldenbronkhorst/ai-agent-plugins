@@ -8,6 +8,23 @@ permissions:
   contents: read
 
 jobs:
+  graph-auth:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Graph authentication and credential-store boundaries offline
+        shell: pwsh
+        run: |
+          $tests = 'plugins/microsoft-graph/skills/microsoft-graph/tests'
+          foreach ($test in @('test_connect_graph.ps1', 'test_graph_transport.ps1', 'test_graph_token_cache.ps1')) {
+            & pwsh -NoLogo -NoProfile -File "$tests/$test"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          & pwsh -NoLogo -NoProfile -File "$tests/test_graph_token_cache.ps1" -LegacyAdapter
+          exit $LASTEXITCODE
   validate:
     runs-on: ubuntu-latest
     steps:

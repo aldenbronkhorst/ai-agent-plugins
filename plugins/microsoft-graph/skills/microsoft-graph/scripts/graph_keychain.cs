@@ -26,7 +26,19 @@ public static class AgentGraphKeychain
 
     private static IntPtr Constant(IntPtr library, string name) => Marshal.ReadIntPtr(NativeLibrary.GetExport(library, name));
 
-    public static string Access(string serviceName, string accountName, string replacement)
+    // Keep reads and writes distinct at the PowerShell boundary: PowerShell
+    // converts $null to an empty string for .NET string arguments.
+    public static string Read(string serviceName, string accountName)
+        => Access(serviceName, accountName, null);
+
+    public static void Write(string serviceName, string accountName, string replacement)
+    {
+        if (string.IsNullOrEmpty(replacement))
+            throw new ArgumentException("An empty refresh token cannot replace a saved sign-in.", nameof(replacement));
+        Access(serviceName, accountName, replacement);
+    }
+
+    private static string Access(string serviceName, string accountName, string replacement)
     {
         var owned = new List<IntPtr>();
         IntPtr data = IntPtr.Zero, security = IntPtr.Zero, foundation = IntPtr.Zero, localAuth = IntPtr.Zero, authContext = IntPtr.Zero;

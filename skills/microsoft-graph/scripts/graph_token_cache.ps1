@@ -41,12 +41,15 @@ function Initialize-GraphKeychain {
     if (-not ('AgentGraphKeychain' -as [type])) {
         Add-Type -Path (Join-Path $PSScriptRoot 'graph_keychain.cs')
     }
+    if (-not [AgentGraphKeychain].GetMethod('Read') -or -not [AgentGraphKeychain].GetMethod('Write')) {
+        throw 'An older Graph Keychain adapter is loaded. Start a fresh PowerShell process and use the updated plugin before retrying; this attempt did not touch saved credentials or start a new sign-in.'
+    }
 }
 
 function Read-GraphRefreshToken([string]$Key) {
     if ($IsMacOS) {
         Initialize-GraphKeychain
-        return [AgentGraphKeychain]::Access('ai-agent-plugins.microsoft-graph', $Key, $null)
+        return [AgentGraphKeychain]::Read('ai-agent-plugins.microsoft-graph', $Key)
     }
     if ($IsLinux) {
         $result = Invoke-GraphSecretTool -Arguments @('lookup', 'service', 'ai-agent-plugins.microsoft-graph', 'account', $Key)
@@ -75,7 +78,7 @@ function Save-GraphRefreshToken([string]$Key, [string]$Token) {
     if (-not $Token) { throw 'Microsoft did not return refresh material for persistent sign-in.' }
     if ($IsMacOS) {
         Initialize-GraphKeychain
-        $null = [AgentGraphKeychain]::Access('ai-agent-plugins.microsoft-graph', $Key, $Token)
+        [AgentGraphKeychain]::Write('ai-agent-plugins.microsoft-graph', $Key, $Token)
         return
     }
     if ($IsLinux) {
