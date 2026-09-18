@@ -63,8 +63,9 @@ function Invoke-GraphOAuthPost {
     }
     $script:case.Events.Add($Body.grant_type)
     if ($Body.grant_type -eq 'refresh_token') {
+        $script:case.RefreshScopes = $Body.scope
         if ($script:case.RefreshFailure) { throw 'mock network failure' }
-        if ($script:case.RefreshError) { return @{StatusCode=400; Content=@{error=$script:case.RefreshError}} }
+        if ($script:case.RefreshError) { return @{StatusCode=400; Content=@{error=$script:case.RefreshError; error_codes=$script:case.RefreshErrorCodes}} }
     } else {
         $script:case.Polls++
         if ($script:case.PollError) { return @{StatusCode=400; Content=@{error=$script:case.PollError}} }
@@ -183,6 +184,54 @@ Run-Case 'rejected refresh authorization permits exactly one device attempt' {
     $script:case.RefreshError='invalid_grant'
     $null=Connect-Test
     Assert-True (@($script:case.Events | Where-Object {$_ -eq 'device-code'}).Count -eq 1) 'Wrong reauthorization count'
+}
+Run-Case 'routine reuse returns actual broad grants without requesting a narrower synonym' {
+    $script:case.GrantedScopes='User.Read Mail.ReadWrite.Shared User.Read.All'
+    $result=Connect-GraphAccount -Account $script:case.Account -TenantId $script:case.Tenant -ReuseOnly
+    Assert-True ($result.Scopes -contains 'Mail.ReadWrite.Shared' -and $result.Scopes -notcontains 'Mail.Read.Shared') 'Actual grants changed or invented'
+    Assert-True ($script:case.RefreshScopes -eq 'openid profile offline_access User.Read') 'Routine use requested new task-specific scopes'
+    Assert-True (-not $script:case.Events.Contains('device-code') -and $script:case.Events.Contains('sdk-connect')) 'Routine use failed to connect silently'
+}
+Run-Case 'reuse-only preserves matching native SDK session without touching stores' {
+    $script:case.Context=New-SdkContext @('User.Read','Mail.ReadWrite.Shared')
+    $result=Connect-GraphAccount -Account $script:case.Account -TenantId $script:case.Tenant -ReuseOnly
+    Assert-True ($result.Authentication -eq 'SdkManaged' -and ($script:case.Events -join ',') -eq 'sdk-me') 'Reusable SDK session was replaced'
+}
+Run-Case 'reuse-only missing cache does not start first-time authentication' {
+    $script:case.Cache.Clear()
+    Assert-Fails { Connect-GraphAccount -Account $script:case.Account -TenantId $script:case.Tenant -ReuseOnly } '*No saved Graph sign-in matched*'
+    Assert-True (-not $script:case.Events.Contains('device-code') -and -not $script:case.Events.Contains('sdk-connect')) 'Missing cache prompted or connected'
+}
+Run-Case 'reuse-only rejected refresh preserves cache without a device code' {
+    $script:case.RefreshError='invalid_grant'
+    $script:case.RefreshErrorCodes=@(700082)
+    Assert-Fails { Connect-GraphAccount -Account $script:case.Account -TenantId $script:case.Tenant -ReuseOnly } '*could not refresh silently*700082*'
+    Assert-True (-not $script:case.Events.Contains('device-code') -and $script:case.Cache[$script:accountKey] -eq 'MOCK_EXISTING_REFRESH') 'Rejected refresh prompted or removed authorization'
+}
+Run-Case 'Microsoft 65001 is missing consent even when wrapped in invalid_grant' {
+    $script:case.RefreshError='invalid_grant'
+    $script:case.RefreshErrorCodes=@(65001)
+    Assert-Fails { Connect-Test } '*requires consent for a requested scope*'
+    Assert-True (-not $script:case.Events.Contains('device-code') -and $script:case.Cache[$script:accountKey] -eq 'MOCK_EXISTING_REFRESH') 'Consent rejection became a new login'
+}
+Run-Case 'consent_required does not issue a code even without numeric error metadata' {
+    $script:case.RefreshError='consent_required'
+    Assert-Fails { Connect-Test } '*requires consent for a requested scope*'
+    Assert-True (-not $script:case.Events.Contains('device-code')) 'Missing consent prompted automatically'
+}
+Run-Case 'reuse-only retains explicit permission checks rather than inventing equivalents' {
+    $script:case.GrantedScopes='User.Read Mail.ReadWrite.Shared'
+    Assert-Fails { Connect-GraphAccount -Account $script:case.Account -TenantId $script:case.Tenant -Scopes @('Mail.Send') -ReuseOnly } '*did not grant*Mail.Send*'
+    Assert-True (-not $script:case.Events.Contains('device-code') -and -not $script:case.Events.Contains('sdk-connect')) 'Missing permission was granted or silently ignored'
+}
+Run-Case 'contradictory reuse and force options fail before any account access' {
+    Assert-Fails { Connect-GraphAccount -Account $script:case.Account -ReuseOnly -ForceDeviceCode } '*cannot be combined*'
+    Assert-True ($script:case.Events.Count -eq 0) 'Conflicting flags touched account state'
+}
+Run-Case 'initial setup without a saved login still permits device authentication' {
+    $script:case.Cache.Clear()
+    $result=Connect-Test
+    Assert-True ($result.Authentication -eq 'ProvidedToken' -and @($script:case.Events | Where-Object {$_ -eq 'device-code'}).Count -eq 1) 'First-time setup was disabled'
 }
 Run-Case 'wrong acquired account preserves original context and every cache' {
     $script:case.TokenAccount='wrong@example.test'

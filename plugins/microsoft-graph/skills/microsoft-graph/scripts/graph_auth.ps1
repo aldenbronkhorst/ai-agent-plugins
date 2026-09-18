@@ -46,12 +46,14 @@ function Connect-GraphAccount {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Account,
-        [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string[]]$Scopes,
+        [ValidateNotNullOrEmpty()][string[]]$Scopes = @('User.Read'),
         [string]$TenantId='common',
         [string]$Environment='Global',
-        [switch]$ForceDeviceCode
+        [switch]$ForceDeviceCode,
+        [switch]$ReuseOnly
     )
     $ErrorActionPreference = 'Stop'
+    if ($ReuseOnly -and $ForceDeviceCode) { throw 'ReuseOnly and ForceDeviceCode cannot be combined.' }
     $accountHint = $Account.Trim()
     $tenant = $TenantId.Trim()
     if (-not $accountHint -or -not $tenant) { throw 'Account and TenantId must not be blank.' }
@@ -115,11 +117,21 @@ function Connect-GraphAccount {
             $tokenResult = $refresh.Content
             $refreshTokenToSave = if ($tokenResult.refresh_token) { $tokenResult.refresh_token } else { $refreshToken }
         }
+        elseif ($refresh.Content.error -eq 'consent_required' -or @($refresh.Content.error_codes) -contains 65001) {
+            throw 'Microsoft requires consent for a requested scope, not necessarily a new login. Reconnect with -ReuseOnly and omit -Scopes to inspect existing grants; a broader approved permission may already support the operation. Request additional consent only if it is genuinely needed. The saved sign-in was preserved and no device code was issued.'
+        }
+        elseif ($ReuseOnly) {
+            $codes = @($refresh.Content.error_codes | Where-Object { $_ -is [int] -or $_ -is [long] }) -join ', '
+            throw "Saved Graph sign-in could not refresh silently (HTTP $($refresh.StatusCode), $($refresh.Content.error), Microsoft codes: $codes). Diagnose this response before requesting reauthentication. The cache was preserved and no device code was issued."
+        }
         elseif ($refresh.Content.error -notin @('invalid_grant', 'interaction_required', 'consent_required')) {
             throw "Microsoft token refresh failed (HTTP $($refresh.StatusCode), $($refresh.Content.error)). The cache was preserved; no new sign-in was started."
         }
     }
     if (-not $tokenResult) {
+        if ($ReuseOnly) {
+            throw 'No saved Graph sign-in matched this account, tenant, and cloud. Check those identifiers and the local credential store before starting account setup. No device code was issued.'
+        }
         $device = Invoke-GraphOAuthPost "$authority/$tenant/oauth2/v2.0/devicecode" @{client_id=$clientId; scope=$scopeText}
         if ($device.StatusCode -ne 200) { throw "Microsoft device-code request failed (HTTP $($device.StatusCode), $($device.Content.error)). Diagnose the returned error before changing scopes or starting another attempt." }
         if (-not $device.Content.device_code -or [int]$device.Content.expires_in -le 0) { throw 'Microsoft returned an incomplete device authorization response.' }
