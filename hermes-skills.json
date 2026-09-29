@@ -1,6 +1,6 @@
 {
   "name": "ai-agent-plugins",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "display_name": "ai-agent-plugins",
   "skills": [
     {
@@ -23,10 +23,10 @@
     },
     {
       "name": "agent-core",
-      "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for questions about whether an external service can be accessed, discovery of installed credential providers, and tasks that can use direct tools instead of a graphical interface.",
+      "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for access checks, credential-provider discovery, direct tool selection, project setup, dependency installation, and creating or managing files in cloud-synced workspaces.",
       "frontmatter": {
         "name": "agent-core",
-        "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for questions about whether an external service can be accessed, discovery of installed credential providers, and tasks that can use direct tools instead of a graphical interface."
+        "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for access checks, credential-provider discovery, direct tool selection, project setup, dependency installation, and creating or managing files in cloud-synced workspaces."
       },
       "path": "skills/agent-core/SKILL.md"
     },

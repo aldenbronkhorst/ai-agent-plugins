@@ -144,7 +144,7 @@ Codex and Claude expose the same names through their native marketplace catalogs
 | --- | --- |
 | [proton-pass](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/proton-pass) | Credential retrieval and session recovery using Proton Pass. |
 | [odoo-19](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/odoo-19) | Odoo 19 development, deployment, and operations. |
-| [agent-core](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/agent-core) | Credential handling, tool selection, and result verification. |
+| [agent-core](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/agent-core) | Credential handling, tool selection, cloud-synced workspace storage, and result verification. |
 | [microsoft-graph](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/microsoft-graph) | Microsoft 365 and Entra through Microsoft Graph. |
 | [github-cli](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/github-cli) | GitHub through the official CLI and Git. |
 | [azure-cli](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/azure-cli) | Azure subscriptions and resources through the official CLI. |
@@ -178,6 +178,10 @@ That context survives prompt rebuilds; disabling/removing a plugin
 removes its registrations on reload. The adapter does not execute helpers,
 install service runtimes, retrieve credentials, or copy skills into global folders.
 Its runtime uses Python's standard library only.
+
+Keep the working clone and its dependency environment outside cloud-synced
+folders. Agent Core's storage guidance separates local runtime and generated
+state from durable documents, deliverables, and portable setup information.
 
 After editing canonical content:
 
