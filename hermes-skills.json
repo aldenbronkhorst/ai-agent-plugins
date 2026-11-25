@@ -13,15 +13,6 @@
       "path": "skills/proton-pass/SKILL.md"
     },
     {
-      "name": "odoo-19",
-      "description": "Use, develop, review, test, and deploy Odoo 19 systems and customizations. Use for normal Odoo operations, models, views, security, reports, migrations, integrations, and record changes.",
-      "frontmatter": {
-        "name": "odoo-19",
-        "description": "Use, develop, review, test, and deploy Odoo 19 systems and customizations. Use for normal Odoo operations, models, views, security, reports, migrations, integrations, and record changes."
-      },
-      "path": "skills/odoo-19/SKILL.md"
-    },
-    {
       "name": "agent-core",
       "description": "Apply foundational operating guidance when working with credentials, accounts, external systems, or technical environments. Use for access checks, credential-provider discovery, direct tool selection, project setup, dependency installation, and creating or managing files in cloud-synced workspaces.",
       "frontmatter": {

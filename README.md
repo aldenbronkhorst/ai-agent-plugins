@@ -1,6 +1,6 @@
 # AI Agent Plugins
 
-Eight plugins for **Hermes Agent, Claude Code and Codex**, sharing the same Agent
+Seven plugins for **Hermes Agent, Claude Code and Codex**, sharing the same Agent
 Skills, helper scripts and icons. Each platform gets its native packaging; the
 workflow instructions and service integrations have one maintained source.
 
@@ -24,8 +24,8 @@ hermes plugins install aldenbronkhorst/ai-agent-plugins/plugins/proton-pass --en
 ```
 
 Ask for the work normally, for example **"Explain how you would use Proton Pass
-to supply credentials without displaying them"** or **"How should I connect to
-Odoo 19?"**. Enabled plugins advertise their workflow descriptions in the agent's
+to supply credentials without displaying them"** or **"Which tools should I check before
+setting up a new project?"**. Enabled plugins advertise their workflow descriptions in the agent's
 session context. The agent loads the corresponding instructions with Hermes'
 native `skill_view` tool, including access to their bundled scripts/resources.
 No manual global skill copies or custom instructions are needed.
@@ -39,17 +39,16 @@ the plugin. For example:
 
 ```bash
 hermes bundles create proton-pass --skill proton-pass:proton-pass --description "Use the Proton Pass plugin"
-hermes bundles create odoo-19 --skill odoo-19:odoo-19 --description "Use the Odoo 19 plugin"
 hermes bundles create agent-core --skill agent-core:agent-core --description "Use the Agent Core plugin"
 ```
 
 Create shortcuts only for plugins you have installed. After the restart, start a new session and
-type `/proton-pass`, `/odoo-19`, or `/agent-core` at the beginning of the composer, followed by
+type `/proton-pass` or `/agent-core` at the beginning of the composer, followed by
 your request. Hermes offers them in slash-command completions and loads the
 referenced skill into the conversation when invoked. The same pattern applies
 to the other plugins: `hermes bundles create NAME --skill NAME:NAME`.
 
-For example: `/odoo-19 Check Production access using Proton Pass`. A slash name
+For example: `/agent-core Check Production access using Proton Pass`. A slash name
 typed inside an ordinary sentence is not the same as invoking the command at
 the start. Natural requests still work when the plugin context has loaded.
 
@@ -87,8 +86,8 @@ enabling, or updating plugins, then use a fresh chat. Existing conversations can
 retain their earlier system prompt even after restarting.
 
 In that fresh chat, ask Hermes to list plugin skills with `skills_list`. Installed
-individual packages should appear as `odoo-19:odoo-19`,
-`proton-pass:proton-pass`, and `agent-core:agent-core` (for whichever you installed).
+individual packages should appear as `proton-pass:proton-pass` and
+`agent-core:agent-core` (for whichever you installed).
 Old `agent-plugin-...` names belong to the earlier portable packaging and must
 not be reused for the current native packages.
 
@@ -100,8 +99,8 @@ an authentication failure. A successful check returns `res.users/context_get`;
 no Odoo records need to be changed.
 
 The repository root remains an optional **single bundle** named `ai-agent-plugins`
-for existing users. It contains all eight workflows, has one enable switch, and
-retains Git for `hermes plugins update ai-agent-plugins`. It is not the eight-entry
+for existing users. It contains all seven workflows, has one enable switch, and
+retains Git for `hermes plugins update ai-agent-plugins`. It is not the seven-entry
 marketplace. Choose either the bundle or individual plugins to avoid duplicates.
 
 ## Install in Codex
@@ -113,7 +112,7 @@ codex plugin marketplace add aldenbronkhorst/ai-agent-plugins
 codex plugin add proton-pass@ai-agent-plugins
 ```
 
-The marketplace offers the eight plugins individually, with their original
+The marketplace offers the seven plugins individually, with their original
 icons. Replace `proton-pass` with another name from the table below. Start a new
 task after installation. To refresh and apply an update:
 
@@ -143,7 +142,6 @@ Codex and Claude expose the same names through their native marketplace catalogs
 | Plugin / Hermes install link | Purpose |
 | --- | --- |
 | [proton-pass](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/proton-pass) | Credential retrieval and session recovery using Proton Pass. |
-| [odoo-19](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/odoo-19) | Odoo 19 development, deployment, and operations. |
 | [agent-core](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/agent-core) | Credential handling, tool selection, cloud-synced workspace storage, and result verification. |
 | [microsoft-graph](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/microsoft-graph) | Microsoft 365 and Entra through Microsoft Graph. |
 | [github-cli](https://github.com/aldenbronkhorst/ai-agent-plugins/tree/main/plugins/github-cli) | GitHub through the official CLI and Git. |
@@ -208,7 +206,7 @@ Run the Hermes integration test with an installed Hermes runtime and its Python:
 ```
 
 This uses a temporary Git repository and isolated Hermes profile. It exercises
-native installation of all eight plugins, `skill_view`, real agent prompt
+native installation of all seven plugins, `skill_view`, real agent prompt
 construction/rebuild, native manual shortcuts through Desktop's completion and
 dispatch backend, disable/re-enable, replacement updates and unload. It makes
 no model API calls and does not access service accounts. A live model invocation

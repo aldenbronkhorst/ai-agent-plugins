@@ -11,11 +11,6 @@
       "description": "Proton Pass credential provider and secure session recovery for AI agents."
     },
     {
-      "name": "odoo-19",
-      "source": "./plugins/odoo-19",
-      "description": "Odoo 19 guidance and an unrestricted JSON-2 request helper."
-    },
-    {
       "name": "agent-core",
       "source": "./plugins/agent-core",
       "description": "Foundational operating guidance for AI agents."
