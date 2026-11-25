@@ -93,7 +93,7 @@ def run(source, scratch):
         skill_file = profile / "plugins" / name / "skills" / name / "SKILL.md"
         assert skill_file.read_text().strip() in result["message"]
         assert result["display"].startswith(f"/{name}"), result["display"]
-    print("PASS: all eight manual shortcuts appear in Desktop completions and dispatch loaded skill prompts")
+    print("PASS: all seven manual shortcuts appear in Desktop completions and dispatch loaded skill prompts")
 
     agent = AIAgent(api_key="integration-test-placeholder", base_url="http://127.0.0.1:9/v1",
                     model="test/model", provider="openai", platform="cli", quiet_mode=True,
@@ -106,16 +106,16 @@ def run(source, scratch):
     rebuilt = build_system_prompt(agent)
     for name in names:
         assert f"{name}:{name}" in rebuilt, f"Lost context after rebuild: {name}"
-    print("PASS: all eight workflows advertised in real agent system prompt and after rebuild")
+    print("PASS: all seven workflows advertised in real agent system prompt and after rebuild")
 
     plugins_cmd._set_plugin_enabled("proton-pass", enable=False)
     manager.discover_and_load(force=True)
     assert manager.find_plugin_skill("proton-pass:proton-pass") is None
     sections = manager.render_system_prompt_sections({})
     assert all("proton-pass:proton-pass" not in section.content for section in sections)
-    assert manager.find_plugin_skill("odoo-19:odoo-19") is not None
+    assert manager.find_plugin_skill("agent-core:agent-core") is not None
     assert build_bundle_invocation_message("/proton-pass", "Explain only") is None
-    assert build_bundle_invocation_message("/odoo-19", "Explain only") is not None
+    assert build_bundle_invocation_message("/agent-core", "Explain only") is not None
     plugins_cmd._set_plugin_enabled("proton-pass", enable=True)
     manager.discover_and_load(force=True)
     assert manager.find_plugin_skill("proton-pass:proton-pass") is not None
